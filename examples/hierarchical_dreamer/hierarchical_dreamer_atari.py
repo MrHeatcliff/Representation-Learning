@@ -25,29 +25,30 @@ def configure_wandb_environment(mode: str | None):
 
 def parse_args():
     parser = argparse.ArgumentParser("Example of XuanCe: Hierarchical Dreamer for Atari.")
-    parser.add_argument("--env-id", type=str, default="ALE/Breakout-v5")
-    parser.add_argument("--log-dir", type=str, default="./logs/hierarchical-dreamer/Breakout-v5/")
-    parser.add_argument("--model-dir", type=str, default="./models/hierarchical-dreamer/Breakout-v5/")
-    parser.add_argument("--device", type=str, default="cuda:0")
-    parser.add_argument("--harmony", type=bool, default=True)
-    parser.add_argument("--logger", type=str, default="wandb", choices=["tensorboard", "wandb"])
-    parser.add_argument("--project-name", type=str, default="Hierarchical-Dreamer")
+    parser.add_argument("--config-file", type=str, default="config/atari.yaml")
+    parser.add_argument("--env-id", type=str, default=None)
+    parser.add_argument("--log-dir", type=str, default=None)
+    parser.add_argument("--model-dir", type=str, default=None)
+    parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--harmony", type=bool, default=None)
+    parser.add_argument("--logger", type=str, default=None, choices=["tensorboard", "wandb"])
+    parser.add_argument("--project-name", type=str, default=None)
     parser.add_argument("--wandb-user-name", type=str, default=None)
-    parser.add_argument("--wandb-mode", type=str, default="online", choices=["online", "offline", "disabled"])
+    parser.add_argument("--wandb-mode", type=str, default=None, choices=["online", "offline", "disabled"])
 
     # atari100k, ratio=1, gradient_step=100k
-    parser.add_argument("--running-steps", type=int, default=100_000)  # 100k
-    parser.add_argument("--eval-interval", type=int, default=2_000)  # 50 logs
-    parser.add_argument("--replay-ratio", type=int, default=1)
-    parser.add_argument("--buffer-size", type=int, default=1_000_000)
-    parser.add_argument("--start-training", type=int, default=1024)
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--seq-len", type=int, default=64)
+    parser.add_argument("--running-steps", type=int, default=None)
+    parser.add_argument("--eval-interval", type=int, default=None)
+    parser.add_argument("--replay-ratio", type=int, default=None)
+    parser.add_argument("--buffer-size", type=int, default=None)
+    parser.add_argument("--start-training", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--seq-len", type=int, default=None)
 
     # parallels & benchmark
-    parser.add_argument('--parallels', type=int, default=1)
-    parser.add_argument("--test", type=int, default=0)
-    parser.add_argument("--benchmark", type=int, default=1)
+    parser.add_argument('--parallels', type=int, default=None)
+    parser.add_argument("--test", type=int, default=None)
+    parser.add_argument("--benchmark", type=int, default=None)
     return parser.parse_args()
 
 
@@ -55,9 +56,12 @@ if __name__ == '__main__':
     # print(sys.path)  # python path
     parser = parse_args()
     configure_wandb_environment(parser.wandb_mode)
-    config_path = Path(__file__).resolve().parent / "config" / "atari.yaml"
+    config_path = Path(parser.config_file)
+    if not config_path.is_absolute():
+        config_path = Path(__file__).resolve().parent / config_path
     configs_dict = load_yaml(file_dir=str(config_path))
-    configs_dict = recursive_dict_update(configs_dict, parser.__dict__)
+    parser_overrides = {k: v for k, v in parser.__dict__.items() if k != "config_file" and v is not None}
+    configs_dict = recursive_dict_update(configs_dict, parser_overrides)
     configs = argparse.Namespace(**configs_dict)
 
     set_seed(configs.seed)

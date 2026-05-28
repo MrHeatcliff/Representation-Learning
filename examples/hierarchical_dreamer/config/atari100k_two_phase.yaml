@@ -1,5 +1,5 @@
 dl_toolbox: "torch"  # The deep learning toolbox. Choices: "torch", "mindspore", "tensorlayer"
-project_name: "Hierarchical-Dreamer"
+project_name: "Hierarchical-Dreamer-Atari100K"
 logger: "wandb"  # Choices: tensorboard, wandb.
 wandb_user_name: null
 render: False
@@ -8,14 +8,14 @@ fps: 50
 test_mode: False
 test: 0
 benchmark: 1
-device: "cpu"
+device: "cuda:0"
 distributed_training: False  # Whether to use multi-GPU for distributed training.
 master_port: '12355'  # The master port for current experiment when use distributed training.
 
 agent: "HierarchicalDreamer"
 vectorize: "Dummy_Atari"
 env_name: "Atari"
-env_id: "ALE/Pong-v5"
+env_id: "ALE/Breakout-v5"
 env_seed: 1
 obs_type: "grayscale"  # choice for Atari env: ram, rgb, grayscale
 img_size: [64, 64]  # default is 210 x 160 in gym[Atari]
@@ -207,5 +207,5 @@ rewnorm_range: 5
 test_steps: 10000
 eval_interval: 2000
 test_episode: 3
-log_dir: "logs/hierarchical-dreamer/Pong-v5/"
-model_dir: "models/hierarchical-dreamer/Pong-v5/"
+log_dir: "logs/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/"
+model_dir: "models/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/"

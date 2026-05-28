@@ -29,6 +29,24 @@ Online W&B run:
 
 ```bash
 .venv/bin/python examples/hierarchical_dreamer/hierarchical_dreamer_atari.py \
-  --env-id ALE/Breakout-v5 \
-  --device cuda:0
+  --config-file config/atari100k_two_phase.yaml
+```
+
+Atari100K regimes:
+
+```bash
+.venv/bin/python examples/hierarchical_dreamer/hierarchical_dreamer_atari.py \
+  --config-file config/atari100k_frozen_encoder.yaml
+
+.venv/bin/python examples/hierarchical_dreamer/hierarchical_dreamer_atari.py \
+  --config-file config/atari100k_two_phase.yaml
+
+.venv/bin/python examples/hierarchical_dreamer/hierarchical_dreamer_atari.py \
+  --config-file config/atari100k_fully_joint.yaml
+```
+
+Sequential Atari100K run, including DreamerV3 baseline last:
+
+```bash
+examples/hierarchical_dreamer/train_atari100k_all_regimes.sh
 ```
