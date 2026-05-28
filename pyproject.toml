@@ -7,7 +7,7 @@ name = "xuance"
 version = "1.4.3"
 description = "XuanCe: A Comprehensive and Unified Deep Reinforcement Learning Library."
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.11,<3.12"
 license = { text = "MIT" }
 
 authors = [
@@ -58,7 +58,7 @@ dependencies = [
 [project.optional-dependencies]
 torch = ["torch", "torchvision"]
 tensorflow = ["tensorflow==2.19.0", "tf_keras==2.19.0"]
-mindspore = ["mindspore==2.6.0", "protobuf==3.20.0"]
+mindspore = ["mindspore==2.6.0", "protobuf==3.20.3"]
 
 all = [
   "torch",
@@ -66,7 +66,7 @@ all = [
   "tensorflow==2.19.0",
   "tf_keras==2.19.0",
   "mindspore==2.6.0",
-  "protobuf==3.20.0"
+  "protobuf==3.20.3"
 ]
 
 tune = [
