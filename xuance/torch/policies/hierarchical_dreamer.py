@@ -363,12 +363,20 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             variance_weight=latent_config.variance_covariance.variance_weight,
             covariance_weight=latent_config.variance_covariance.covariance_weight,
         )
+        self._move_hierarchical_modules_to_device()
         self.latest_hierarchical_recon_loss = None
         self.latest_sparse_dynamics_loss = None
         self.latest_temporal_contrastive_loss = None
         self.latest_vicreg_loss = None
         self.latest_sparsity_loss = None
         self.latest_sparse_latent_info = {}
+
+    def _move_hierarchical_modules_to_device(self):
+        self.sparse_latent_heads.to(self.device)
+        self.sparse_latent_readout.to(self.device)
+        self.nested_reconstruction_decoders.to(self.device)
+        self.multi_stride_sparse_dynamics.to(self.device)
+        self.temporal_vicreg.to(self.device)
 
     def hierarchical_latent_parameters(self):
         return (

@@ -23,6 +23,12 @@ def configure_wandb_environment(mode: str | None):
         os.environ.setdefault(env_name, str(path))
 
 
+def build_wandb_run_name(configs):
+    env_name = configs.env_id.split("/")[-1]
+    regime = getattr(getattr(configs, "training_regime", None), "name", "hierarchical")
+    return f"{configs.agent}-{regime}-{env_name}-seed{configs.seed}-{configs.running_steps}steps"
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Example of XuanCe: Hierarchical Dreamer for Atari.")
     parser.add_argument("--config-file", type=str, default="config/atari.yaml")
@@ -35,6 +41,7 @@ def parse_args():
     parser.add_argument("--project-name", type=str, default=None)
     parser.add_argument("--wandb-user-name", type=str, default=None)
     parser.add_argument("--wandb-mode", type=str, default=None, choices=["online", "offline", "disabled"])
+    parser.add_argument("--wandb-run-name", type=str, default=None)
 
     # atari100k, ratio=1, gradient_step=100k
     parser.add_argument("--running-steps", type=int, default=None)
@@ -63,6 +70,8 @@ if __name__ == '__main__':
     parser_overrides = {k: v for k, v in parser.__dict__.items() if k != "config_file" and v is not None}
     configs_dict = recursive_dict_update(configs_dict, parser_overrides)
     configs = argparse.Namespace(**configs_dict)
+    if getattr(configs, "wandb_run_name", None) is None:
+        configs.wandb_run_name = build_wandb_run_name(configs)
 
     set_seed(configs.seed)
     envs = make_envs(configs)

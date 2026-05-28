@@ -50,3 +50,16 @@ Sequential Atari100K run, including DreamerV3 baseline last:
 ```bash
 examples/hierarchical_dreamer/train_atari100k_all_regimes.sh
 ```
+
+The launcher names W&B runs as:
+
+```text
+HDreamer-<regime>-<rom>-seed1-<steps>steps-<run_group>
+DreamerV3-baseline-<rom>-seed1-<steps>steps-<run_group>
+```
+
+`DEVICE` defaults to the value in the launcher and can be overridden:
+
+```bash
+DEVICE=cuda:0 examples/hierarchical_dreamer/train_atari100k_all_regimes.sh
+```

@@ -7,7 +7,7 @@ PYTHON_BIN="${PYTHON_BIN:-${REPO_ROOT}/.venv/bin/python}"
 
 ENV_ID="${ENV_ID:-ALE/Breakout-v5}"
 ROM_NAME="${ENV_ID##*/}"
-DEVICE="${DEVICE:-cuda:0}"
+DEVICE="${DEVICE:-cuda:1}"
 WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-Hierarchical-Dreamer-Atari100K}"
 
@@ -29,6 +29,7 @@ run_hierarchical_regime() {
   local regime="$1"
   local config_file="$2"
   local log_file="${RUN_LOG_ROOT}/${regime}.log"
+  local wandb_run_name="HDreamer-${regime}-${ROM_NAME}-seed1-${RUNNING_STEPS}steps-${RUN_GROUP}"
 
   mkdir -p \
     "${REPO_ROOT}/logs/hierarchical-dreamer/atari100k/${regime}/${ROM_NAME}" \
@@ -44,6 +45,7 @@ run_hierarchical_regime() {
       --logger wandb \
       --project-name "${PROJECT_NAME}" \
       --wandb-mode "${WANDB_MODE}" \
+      --wandb-run-name "${wandb_run_name}" \
       --running-steps "${RUNNING_STEPS}" \
       --eval-interval "${EVAL_INTERVAL}" \
       --replay-ratio "${REPLAY_RATIO}" \
@@ -62,6 +64,7 @@ run_hierarchical_regime() {
 run_dreamer_baseline() {
   local regime="dreamer_baseline"
   local log_file="${RUN_LOG_ROOT}/${regime}.log"
+  local wandb_run_name="DreamerV3-baseline-${ROM_NAME}-seed1-${RUNNING_STEPS}steps-${RUN_GROUP}"
 
   mkdir -p \
     "${REPO_ROOT}/logs/dreamer-v3/atari100k/${regime}/${ROM_NAME}" \
@@ -76,6 +79,7 @@ run_dreamer_baseline() {
       --logger wandb \
       --project-name "${PROJECT_NAME}" \
       --wandb-mode "${WANDB_MODE}" \
+      --wandb-run-name "${wandb_run_name}" \
       --running-steps "${RUNNING_STEPS}" \
       --eval-interval "${EVAL_INTERVAL}" \
       --replay-ratio "${REPLAY_RATIO}" \

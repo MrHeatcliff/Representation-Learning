@@ -150,6 +150,7 @@ class Agent(ABC):
             else:
                 while not os.path.exists(str(wandb_dir)):
                     pass  # Wait until the master process finishes creating directory.
+            wandb_run_name = getattr(config, "wandb_run_name", None) or time_string
             wandb.init(
                 config=config_dict,
                 project=config.project_name,
@@ -158,7 +159,7 @@ class Agent(ABC):
                 dir=wandb_dir,
                 group=config.env_id,
                 job_type=config.agent,
-                name=time_string,
+                name=wandb_run_name,
                 reinit=True,
                 settings=wandb.Settings(start_method="fork")
             )

@@ -23,6 +23,11 @@ def configure_wandb_environment(mode: str | None):
         os.environ.setdefault(env_name, str(path))
 
 
+def build_wandb_run_name(configs):
+    env_name = configs.env_id.split("/")[-1]
+    return f"{configs.agent}-baseline-{env_name}-seed{configs.seed}-{configs.running_steps}steps"
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Example of XuanCe: DreamerV3 for Atari.")
     parser.add_argument("--env-id", type=str, default="ALE/Breakout-v5")
@@ -34,6 +39,7 @@ def parse_args():
     parser.add_argument("--project-name", type=str, default="Representation-Learning")
     parser.add_argument("--wandb-user-name", type=str, default=None)
     parser.add_argument("--wandb-mode", type=str, default="online", choices=["online", "offline", "disabled"])
+    parser.add_argument("--wandb-run-name", type=str, default=None)
 
     # atari100k, ratio=1, gradient_step=100k
     parser.add_argument("--running-steps", type=int, default=100_000)  # 100k
@@ -59,6 +65,8 @@ if __name__ == '__main__':
     configs_dict = load_yaml(file_dir=str(config_path))
     configs_dict = recursive_dict_update(configs_dict, parser.__dict__)
     configs = argparse.Namespace(**configs_dict)
+    if getattr(configs, "wandb_run_name", None) is None:
+        configs.wandb_run_name = build_wandb_run_name(configs)
 
     set_seed(configs.seed)
     envs = make_envs(configs)
