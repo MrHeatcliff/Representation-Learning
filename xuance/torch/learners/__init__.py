@@ -13,7 +13,7 @@ from .qlearning_family import (
 )
 
 from .model_based import (
-    DreamerV2_Learner, DreamerV3_Learner
+    DreamerV2_Learner, DreamerV3_Learner, HierarchicalDreamer_Learner
 )
 
 from .contrastive_unsupervised_rl import (
@@ -64,6 +64,7 @@ REGISTRY_Learners = {
 
     "DreamerV2_Learner": DreamerV2_Learner,
     "DreamerV3_Learner": DreamerV3_Learner,
+    "HierarchicalDreamer_Learner": HierarchicalDreamer_Learner,
 
     "IQL_Learner": IQL_Learner,
     "VDN_Learner": VDN_Learner,
@@ -105,7 +106,7 @@ __all__ = [
 
     "DQN_Learner", "DuelDQN_Learner", "DDQN_Learner", "PerDQN_Learner", "C51_Learner", "QRDQN_Learner", "DRQN_Learner",
 
-    "DreamerV2_Learner", "DreamerV3_Learner",
+    "DreamerV2_Learner", "DreamerV3_Learner", "HierarchicalDreamer_Learner",
 
     "IQL_Learner", "VDN_Learner", "QMIX_Learner", "WQMIX_Learner", "QTRAN_Learner",
     "IAC_Learner", "VDAC_Learner", "COMA_Learner", "IPPO_Learner", "MAPPO_Learner",

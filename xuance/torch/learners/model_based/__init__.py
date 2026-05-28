@@ -1,2 +1,3 @@
 from .dreamer_v2_learner import DreamerV2_Learner
 from .dreamer_v3_learner import DreamerV3_Learner
+from .hierarchical_dreamer_learner import HierarchicalDreamer_Learner

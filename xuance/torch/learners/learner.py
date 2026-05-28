@@ -11,6 +11,10 @@ from xuance.torch import Tensor, Module
 MAX_GPUs = torch.cuda.device_count()
 
 
+def get_cuda_rng_state_all():
+    return torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+
+
 class Learner(ABC):
     def __init__(self,
                  config: Namespace,
@@ -69,7 +73,7 @@ class Learner(ABC):
                     'policy': self.policy.state_dict(),
                     'optimizer': {k: v.state_dict() for k, v in self.optimizer.items()},
                     'rng_state': torch.get_rng_state(),
-                    'cuda_rng_state': torch.cuda.get_rng_state_all(),
+                    'cuda_rng_state': get_cuda_rng_state_all(),
                 },
                 model_path)
         else:
@@ -78,7 +82,7 @@ class Learner(ABC):
                     'policy': self.policy.state_dict(),
                     'optimizer': self.optimizer.state_dict(),
                     'rng_state': torch.get_rng_state(),
-                    'cuda_rng_state': torch.cuda.get_rng_state_all(),
+                    'cuda_rng_state': get_cuda_rng_state_all(),
                 },
                 model_path)
         if self.distributed_training:
@@ -399,7 +403,7 @@ class LearnerMAS(Learner):
                         'optimizer': {k_a: {k: v.state_dict() for k, v in v_a.items()}
                                       for k_a, v_a in self.optimizer.items()},  # agent-wise
                         'rng_state': torch.get_rng_state(),
-                        'cuda_rng_state': torch.cuda.get_rng_state_all(),
+                        'cuda_rng_state': get_cuda_rng_state_all(),
                     },
                     model_path)
             else:
@@ -408,7 +412,7 @@ class LearnerMAS(Learner):
                         'policy': self.policy.state_dict(),
                         'optimizer': {k: v.state_dict() for k, v in self.optimizer.items()},
                         'rng_state': torch.get_rng_state(),
-                        'cuda_rng_state': torch.cuda.get_rng_state_all(),
+                        'cuda_rng_state': get_cuda_rng_state_all(),
                     },
                     model_path)
         else:
@@ -417,7 +421,7 @@ class LearnerMAS(Learner):
                     'policy': self.policy.state_dict(),
                     'optimizer': self.optimizer.state_dict(),
                     'rng_state': torch.get_rng_state(),
-                    'cuda_rng_state': torch.cuda.get_rng_state_all(),
+                    'cuda_rng_state': get_cuda_rng_state_all(),
                 },
                 model_path)
 

@@ -47,6 +47,7 @@ from .gaussian_marl import MASAC_Policy as Gaussian_MASAC
 from .gaussian_marl import MAAC_Policy as Gaussain_MAAC
 
 from .dreamer import DreamerV2Policy, DreamerV3Policy
+from .hierarchical_dreamer import HierarchicalDreamerPolicy
 
 Mixer = {
     "VDN": VDN_mixer,
@@ -80,6 +81,7 @@ REGISTRY_Policy = {
     # ↓ Model-based DRL ↓ #
     "DreamerV2_Policy": DreamerV2Policy,
     "DreamerV3_Policy": DreamerV3Policy,
+    "HierarchicalDreamerPolicy": HierarchicalDreamerPolicy,
     # ↓ Multi-Agent DRL ↓ #
     "Basic_Q_network_marl": BasicQnetwork_marl,
     "Mixing_Q_network": MixingQnetwork,
@@ -120,5 +122,5 @@ __all__ = [
     "IC3Net_Policy", "CommNet_Policy", "TarMAC_Policy",
     "Categorical_ISAC", "Categorical_MASAC",
     "Gaussian_ISAC", "Gaussian_MASAC", "Gaussain_MAAC",
-    "DreamerV2Policy", "DreamerV3Policy",
+    "DreamerV2Policy", "DreamerV3Policy", "HierarchicalDreamerPolicy",
 ]

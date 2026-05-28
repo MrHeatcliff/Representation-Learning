@@ -649,10 +649,9 @@ class SequentialReplayBuffer(Buffer):
                  n_envs: int,
                  buffer_size: int,
                  batch_size: int):
-        super(SequentialReplayBuffer, self).__init__(observation_space, action_space, auxiliary_shape)
+        super(SequentialReplayBuffer, self).__init__(observation_space, action_space, auxiliary_shape,
+                                                     n_envs, buffer_size)
         self.n_envs, self.batch_size = n_envs, batch_size
-        assert buffer_size % self.n_envs == 0, "buffer_size must be divisible by the number of envs (parallels)"
-        self.n_size = buffer_size // self.n_envs
         self.obs = create_memory(space2shape(self.observation_space), self.n_envs, self.n_size)
         self.acts = create_memory(space2shape(self.action_space), self.n_envs, self.n_size)
         self.rews = create_memory((), self.n_envs, self.n_size)

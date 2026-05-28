@@ -1,5 +1,5 @@
 dl_toolbox: "torch"  # The deep learning toolbox. Choices: "torch", "mindspore", "tensorlayer"
-project_name: "Representation-Learning"
+project_name: "Hierarchical-Dreamer"
 logger: "wandb"  # Choices: tensorboard, wandb.
 wandb_user_name: null
 render: False
@@ -10,7 +10,7 @@ device: "cpu"
 distributed_training: False  # Whether to use multi-GPU for distributed training.
 master_port: '12355'  # The master port for current experiment when use distributed training.
 
-agent: "DreamerV3"
+agent: "HierarchicalDreamer"
 vectorize: "Dummy_Atari"
 env_name: "Atari"
 env_id: "ALE/Pong-v5"
@@ -20,9 +20,9 @@ img_size: [64, 64]  # default is 210 x 160 in gym[Atari]
 num_stack: 1  # frame stack trick
 frame_skip: 4  # frame skip trick  (action_repeat = 4 for atari100k)
 noop_max: 30
-representation: "DreamerV3WorldModel"
-learner: "DreamerV3_Learner"
-policy: "DreamerV3Policy"
+representation: "HierarchicalDreamerWorldModel"
+learner: "HierarchicalDreamer_Learner"
+policy: "HierarchicalDreamerPolicy"
 runner: "DRL"
 
 # world_model & actor_critic start
@@ -159,5 +159,5 @@ rewnorm_range: 5
 test_steps: 10000
 eval_interval: 2000
 test_episode: 3
-log_dir: "logs/Pong-v5/"
-model_dir: "models/Pong-v5/"
+log_dir: "logs/hierarchical-dreamer/Pong-v5/"
+model_dir: "models/hierarchical-dreamer/Pong-v5/"

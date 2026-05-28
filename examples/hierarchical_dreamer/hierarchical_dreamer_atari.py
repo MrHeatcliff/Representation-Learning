@@ -6,7 +6,7 @@ from pathlib import Path
 from xuance.torch.utils.operations import set_seed
 from xuance.common import load_yaml, recursive_dict_update
 from xuance.environment import make_envs
-from xuance.torch.agents import DreamerV3Agent
+from xuance.torch.agents import HierarchicalDreamerAgent
 
 
 def configure_wandb_environment(mode: str | None):
@@ -24,14 +24,14 @@ def configure_wandb_environment(mode: str | None):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser("Example of XuanCe: DreamerV3 for Atari.")
+    parser = argparse.ArgumentParser("Example of XuanCe: Hierarchical Dreamer for Atari.")
     parser.add_argument("--env-id", type=str, default="ALE/Breakout-v5")
-    parser.add_argument("--log-dir", type=str, default="./logs/Breakout-v5/")
-    parser.add_argument("--model-dir", type=str, default="./models/Breakout-v5/")
+    parser.add_argument("--log-dir", type=str, default="./logs/hierarchical-dreamer/Breakout-v5/")
+    parser.add_argument("--model-dir", type=str, default="./models/hierarchical-dreamer/Breakout-v5/")
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--harmony", type=bool, default=True)
     parser.add_argument("--logger", type=str, default="wandb", choices=["tensorboard", "wandb"])
-    parser.add_argument("--project-name", type=str, default="Representation-Learning")
+    parser.add_argument("--project-name", type=str, default="Hierarchical-Dreamer")
     parser.add_argument("--wandb-user-name", type=str, default=None)
     parser.add_argument("--wandb-mode", type=str, default="online", choices=["online", "offline", "disabled"])
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     set_seed(configs.seed)
     envs = make_envs(configs)
-    Agent = DreamerV3Agent(config=configs, envs=envs)
+    Agent = HierarchicalDreamerAgent(config=configs, envs=envs)
 
     train_information = {"Deep learning toolbox": configs.dl_toolbox,
                          "Calculating device": configs.device,
