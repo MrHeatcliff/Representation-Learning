@@ -25,7 +25,19 @@ def configure_wandb_environment(mode: str | None):
 
 def build_wandb_run_name(configs):
     env_name = configs.env_id.split("/")[-1]
-    return f"{configs.agent}-baseline-{env_name}-seed{configs.seed}-{configs.running_steps}steps"
+    method = "HarmonyDream" if getattr(configs, "harmony", False) else "DreamerV3"
+    return f"{method}-baseline-{env_name}-seed{configs.seed}-{configs.running_steps}steps"
+
+
+def str2bool(value):
+    if isinstance(value, bool):
+        return value
+    lowered = value.lower()
+    if lowered in ("true", "1", "yes", "y"):
+        return True
+    if lowered in ("false", "0", "no", "n"):
+        return False
+    raise argparse.ArgumentTypeError(f"Expected boolean value, got {value}.")
 
 
 def parse_args():
@@ -34,7 +46,7 @@ def parse_args():
     parser.add_argument("--log-dir", type=str, default="./logs/Breakout-v5/")
     parser.add_argument("--model-dir", type=str, default="./models/Breakout-v5/")
     parser.add_argument("--device", type=str, default="cuda:0")
-    parser.add_argument("--harmony", type=bool, default=True)
+    parser.add_argument("--harmony", type=str2bool, default=None)
     parser.add_argument("--logger", type=str, default="wandb", choices=["tensorboard", "wandb"])
     parser.add_argument("--project-name", type=str, default="Representation-Learning")
     parser.add_argument("--wandb-user-name", type=str, default=None)
@@ -63,7 +75,8 @@ if __name__ == '__main__':
     configure_wandb_environment(parser.wandb_mode)
     config_path = Path(__file__).resolve().parent / "config" / "atari.yaml"
     configs_dict = load_yaml(file_dir=str(config_path))
-    configs_dict = recursive_dict_update(configs_dict, parser.__dict__)
+    parser_overrides = {k: v for k, v in parser.__dict__.items() if v is not None}
+    configs_dict = recursive_dict_update(configs_dict, parser_overrides)
     configs = argparse.Namespace(**configs_dict)
     if getattr(configs, "wandb_run_name", None) is None:
         configs.wandb_run_name = build_wandb_run_name(configs)

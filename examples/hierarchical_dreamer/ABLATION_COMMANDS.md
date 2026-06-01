@@ -244,7 +244,40 @@ not implemented yet.
 --set hierarchical_latent.loss_weights.sparsity=0.0
 ```
 
-### Larger Flat Dreamer / Harmony / DyMo / SGF / T-SAE / External Methods
+### HarmonyDream External Baseline
+
+Two paths exist:
+
+- `READY`: XuanCe same-code HarmonyDream baseline, using the local DreamerV3
+  learner with `harmony=True`.
+- `PARTIAL`: official upstream JAX code, cloned locally and wrapped. It should
+  run in its own JAX environment rather than being mixed into the XuanCe `.venv`.
+
+Same-code XuanCe command:
+
+```bash
+ENV_ID=ALE/Breakout-v5 \
+SEED=1 \
+DEVICE=cuda:0 \
+REPLAY_RATIO=0.25 \
+RUN_NAME=XuanCe-HarmonyDream-Breakout-v5-seed1-100000steps-rr0.25 \
+examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
+```
+
+Official-code JAX command:
+
+```bash
+GAME=breakout \
+SEED=0 \
+DEVICE_ID=0 \
+RUN_NAME=harmonydream-atari100k-breakout-seed0 \
+examples/hierarchical_dreamer/baselines/run_harmonydream_atari100k.sh
+```
+
+Details and protocol caveats:
+`examples/hierarchical_dreamer/baselines/HARMONYDREAM_BASELINE.md`.
+
+### Larger Flat Dreamer / DyMo / SGF / T-SAE / Other External Methods
 
 `MISSING`: these need separate implementations or adapters. Keep them as paper
 rows only until official/adapted code exists.
@@ -254,8 +287,10 @@ rows only until official/adapted code exists.
 I will not silently reimplement these from paper names alone because small
 implementation choices can change the comparison:
 
-- Harmony Dreamer: needs official/adapted loss harmonization implementation and
-  its tuning protocol.
+- HarmonyDream: XuanCe same-code baseline is runnable with local DreamerV3;
+  official upstream code is also available locally and wrapped for Atari100K,
+  but still needs a dedicated JAX environment and successful smoke run before
+  marking paper-code-ready.
 - DyMoDreamer: needs dynamic modulation modules and visual-task protocol.
 - SGF-style flat: needs exact projector, VICReg/flat latent objective, and
   integration point.
@@ -292,10 +327,12 @@ Video-Background DMC, Crafter, DMLab wrappers/protocols, and aggregate script.
 
 Runnable rows now: Dreamer backbone, flat single-level SAE approximation,
 Matryoshka-only, recon-only hierarchy, dense multi-stride, no `L_temp`,
-no `L_vc`, HTS-WM.
+no `L_vc`, HTS-WM, and HarmonyDream as an external official-code baseline once
+its JAX environment is installed. The XuanCe same-code HarmonyDream baseline is
+runnable through `run_xuance_harmonydream_atari100k.sh`.
 
-Missing rows: larger flat Dreamer, Harmony Dreamer, DyMoDreamer, SGF-style flat,
-true flat multi-horizon, T-SAE-style port, DyMoDreamer + HTS-WM.
+Missing rows: larger flat Dreamer, DyMoDreamer, SGF-style flat, true flat
+multi-horizon, T-SAE-style port, DyMoDreamer + HTS-WM.
 
 ### tab:baseline-execution-tiers - Baseline Execution Tiers
 
@@ -309,8 +346,9 @@ available in current XuanCe branch`.
 
 `PARTIAL`.
 
-Can fill Atari/Dreamer/Matryoshka/HTS-WM cells from current runs. Memory, motion,
-distractor, DMC, Harmony, DyMo, and GPU-hour summaries need additional suites and
+Can fill Atari/Dreamer/Matryoshka/HTS-WM cells from current runs. HarmonyDream
+can fill its Atari cell after the upstream JAX run completes. Memory, motion,
+distractor, DMC, DyMo, and GPU-hour summaries need additional suites and
 baselines.
 
 ### tab:hero-panel-slots - Hero Panel Slots
@@ -575,8 +613,9 @@ available in the config.
 
 `PARTIAL`.
 
-Same status as `tab:baselines`. Current branch covers only internal controls;
-external prior-method baselines need separate implementations/adapters.
+Same status as `tab:baselines`. HarmonyDream now has an official-code wrapper;
+other external prior-method baselines still need separate implementations or
+adapters.
 
 ### tab:offline-diagnosis - Offline Fixed-Buffer Diagnosis
 
@@ -725,7 +764,9 @@ Need compute instrumentation from `tab:compute`.
 
 `PARTIAL`.
 
-Already logged: raw and weighted hierarchy loss contributions.
+Already logged: raw and weighted hierarchy loss contributions. HarmonyDream's
+official JAX code logs `harmony_s*`, `coeff*`, and `sigma*` in its own
+`metrics.jsonl` once run through the external wrapper.
 
 Also logged now: gradient norms for world-model, encoder, and hierarchy parameter
 groups.
