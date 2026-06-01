@@ -70,12 +70,13 @@ critic:
 
 hierarchical_latent:
   enabled: true
+  ablation_name: "full"
   trunk_hidden_size: 512
   trunk_output_size: 256
   num_heads: 6
   head_dim: 32
   activation: "silu"
-  sparsity_topk: 8
+  sparsity_topk: [8, 8, 8, 8, 8, 8]
   integration: "residual"  # Choices: none, residual, replace.
   residual_scale: 0.1
   reconstruction:
@@ -86,17 +87,26 @@ hierarchical_latent:
     predictor_hidden_size: 512
     strides: [32, 16, 8, 4, 2, 1]
     alphas: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    require_strict_decreasing: true
     stop_gradient_lower_levels: true
+    target_stop_gradient: true
+    action_mode: "subsequence"  # Choices: state_only, current_action, subsequence.
   temporal_consistency:
+    mode: "contrastive"  # Choices: none, smooth, contrastive.
+    projector_type: "nonlinear"  # Choices: none, linear, nonlinear.
+    far_negative_mode: "hard"  # Logged config for analysis: none, hard, soft.
     projection_hidden_size: 128
     projection_dim: 64
     positive_stride: 1
     temperature: 0.1
   variance_covariance:
+    mode: "both"  # Choices: none, variance, covariance, both.
     std_target: 1.0
     variance_weight: 1.0
     covariance_weight: 0.04
   sparsity:
+    mode: "level_topk"  # Choices: none, l1, level_topk, global_topk.
+    budget_schedule: "uniform"  # Logged config: uniform, front, back, custom.
     gammas: [0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001]
   loss_weights:
     hierarchical: 1.0

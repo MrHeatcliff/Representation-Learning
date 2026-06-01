@@ -10,6 +10,15 @@ from xuance.torch import Module, Tensor
 from xuance.torch.utils.distributions import SymLogDistribution, TwoHotEncodingDistribution, BernoulliSafeMode
 
 
+def _listify(value, length: int):
+    values = list(value) if isinstance(value, (list, tuple)) else [value]
+    if len(values) == 1:
+        values = values * length
+    if len(values) != length:
+        raise ValueError(f"Expected length 1 or {length}, got {len(values)}.")
+    return values
+
+
 class SparseLatentHeads(nn.Module):
     """Maps Dreamer recurrent states h_t into multiple sparse latent heads.
 
@@ -27,12 +36,14 @@ class SparseLatentHeads(nn.Module):
         num_heads: int,
         head_dim: int,
         activation: str,
-        sparsity_topk: int | None,
+        sparsity_mode: str,
+        sparsity_topk: int | list[int] | None,
     ):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim
-        self.sparsity_topk = sparsity_topk
+        self.sparsity_mode = sparsity_mode
+        self.sparsity_topk = _listify(sparsity_topk, num_heads) if sparsity_topk is not None else [0] * num_heads
 
         self.trunk = nn.Sequential(
             nn.Linear(recurrent_state_size, trunk_hidden_size),
@@ -56,11 +67,28 @@ class SparseLatentHeads(nn.Module):
         return nn.SiLU()
 
     def _apply_topk_sparsity(self, heads: Tensor) -> Tensor:
-        if self.sparsity_topk is None or self.sparsity_topk <= 0 or self.sparsity_topk >= self.head_dim:
+        if self.sparsity_mode in ("none", "l1"):
             return heads
-        _, indices = torch.topk(heads.abs(), k=self.sparsity_topk, dim=-1)
-        mask = torch.zeros_like(heads).scatter_(-1, indices, 1.0)
-        return heads * mask
+        if self.sparsity_mode == "level_topk":
+            sparse_heads = []
+            for level, topk in enumerate(self.sparsity_topk):
+                level_heads = heads[..., level, :]
+                if topk is None or topk <= 0 or topk >= self.head_dim:
+                    sparse_heads.append(level_heads)
+                    continue
+                _, indices = torch.topk(level_heads.abs(), k=topk, dim=-1)
+                mask = torch.zeros_like(level_heads).scatter_(-1, indices, 1.0)
+                sparse_heads.append(level_heads * mask)
+            return torch.stack(sparse_heads, dim=-2)
+        if self.sparsity_mode == "global_topk":
+            topk = int(sum(max(int(k), 0) for k in self.sparsity_topk))
+            flat = heads.reshape(*heads.shape[:-2], self.num_heads * self.head_dim)
+            if topk <= 0 or topk >= flat.shape[-1]:
+                return heads
+            _, indices = torch.topk(flat.abs(), k=topk, dim=-1)
+            mask = torch.zeros_like(flat).scatter_(-1, indices, 1.0)
+            return (flat * mask).reshape_as(heads)
+        raise ValueError(f"Unknown hierarchical_latent.sparsity.mode: {self.sparsity_mode}")
 
     def forward(self, recurrent_states: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         original_shape = recurrent_states.shape[:-1]
@@ -139,6 +167,8 @@ class MultiStrideSparseDynamics(nn.Module):
         strides: list[int],
         alphas: list[float],
         stop_gradient_lower_levels: bool,
+        target_stop_gradient: bool,
+        action_mode: str,
     ):
         super().__init__()
         self.recurrent_state_size = recurrent_state_size
@@ -148,10 +178,23 @@ class MultiStrideSparseDynamics(nn.Module):
         self.strides = strides
         self.alphas = alphas
         self.stop_gradient_lower_levels = stop_gradient_lower_levels
+        self.target_stop_gradient = target_stop_gradient
+        self.action_mode = action_mode
+        if action_mode == "state_only":
+            action_context_dims = [0 for _ in range(num_heads)]
+        elif action_mode == "current_action":
+            action_context_dims = [actions_dim for _ in range(num_heads)]
+        elif action_mode == "subsequence":
+            action_context_dims = [stride * actions_dim for stride in strides]
+        else:
+            raise ValueError(
+                "hierarchical_latent.sparse_dynamics.action_mode must be one of "
+                "{state_only, current_action, subsequence}."
+            )
         self.predictors = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.Linear((level + 1) * head_dim + strides[level] * actions_dim, hidden_size),
+                    nn.Linear((level + 1) * head_dim + action_context_dims[level], hidden_size),
                     nn.SiLU(),
                     nn.Linear(hidden_size, hidden_size),
                     nn.SiLU(),
@@ -160,6 +203,13 @@ class MultiStrideSparseDynamics(nn.Module):
                 for level in range(num_heads)
             ]
         )
+
+    def _action_context(self, actions: Tensor, stride: int) -> Tensor | None:
+        if self.action_mode == "state_only":
+            return None
+        if self.action_mode == "current_action":
+            return actions[1:actions.shape[0] - stride + 1]
+        return self._action_windows(actions, stride)
 
     def _prefix_for_level(self, sparse_heads: Tensor, level: int) -> Tensor:
         if not self.stop_gradient_lower_levels or level == 0:
@@ -196,10 +246,12 @@ class MultiStrideSparseDynamics(nn.Module):
                 continue
 
             prefix = self._prefix_for_level(sparse_heads[:-stride], level)
-            action_context = self._action_windows(actions, stride)
-            predictor_input = torch.cat((prefix, action_context), dim=-1)
+            action_context = self._action_context(actions, stride)
+            predictor_input = prefix if action_context is None else torch.cat((prefix, action_context), dim=-1)
             predicted_h = predictor(predictor_input)
-            target_future_h = target_h[stride:].detach()
+            target_future_h = target_h[stride:]
+            if self.target_stop_gradient:
+                target_future_h = target_future_h.detach()
             level_loss = (target_future_h - predicted_h).pow(2).mean()
             loss = loss + self.alphas[level] * level_loss
             info[f"hierarchical_latent/sdyn_loss_level_{level + 1}"] = level_loss.detach()
@@ -216,23 +268,37 @@ class TemporalContrastiveVICReg(nn.Module):
         head_dim: int,
         projection_hidden_size: int,
         projection_dim: int,
+        projector_type: str,
+        temporal_mode: str,
         positive_stride: int,
         temperature: float,
         std_target: float,
+        vc_mode: str,
         variance_weight: float,
         covariance_weight: float,
     ):
         super().__init__()
+        self.temporal_mode = temporal_mode
         self.positive_stride = positive_stride
         self.temperature = temperature
         self.std_target = std_target
+        self.vc_mode = vc_mode
         self.variance_weight = variance_weight
         self.covariance_weight = covariance_weight
-        self.projector = nn.Sequential(
-            nn.Linear(head_dim, projection_hidden_size),
-            nn.SiLU(),
-            nn.Linear(projection_hidden_size, projection_dim),
-        )
+        if projector_type == "none":
+            if projection_dim != head_dim:
+                raise ValueError("projection_dim must equal head_dim when projector_type is none.")
+            self.projector = nn.Identity()
+        elif projector_type == "linear":
+            self.projector = nn.Linear(head_dim, projection_dim)
+        elif projector_type == "nonlinear":
+            self.projector = nn.Sequential(
+                nn.Linear(head_dim, projection_hidden_size),
+                nn.SiLU(),
+                nn.Linear(projection_hidden_size, projection_dim),
+            )
+        else:
+            raise ValueError("projector_type must be one of {none, linear, nonlinear}.")
 
     @staticmethod
     def _off_diagonal(matrix: Tensor) -> Tensor:
@@ -267,15 +333,43 @@ class TemporalContrastiveVICReg(nn.Module):
 
         covariance = flat.transpose(0, 1) @ flat / (flat.shape[0] - 1)
         covariance_loss = self._off_diagonal(covariance).pow(2).sum() / flat.shape[-1]
-        vicreg_loss = self.variance_weight * variance_loss + self.covariance_weight * covariance_loss
+        if self.vc_mode == "none":
+            vicreg_loss = projections.new_zeros(())
+        elif self.vc_mode == "variance":
+            vicreg_loss = self.variance_weight * variance_loss
+        elif self.vc_mode == "covariance":
+            vicreg_loss = self.covariance_weight * covariance_loss
+        elif self.vc_mode == "both":
+            vicreg_loss = self.variance_weight * variance_loss + self.covariance_weight * covariance_loss
+        else:
+            raise ValueError("variance_covariance.mode must be one of {none, variance, covariance, both}.")
         return vicreg_loss, variance_loss, covariance_loss
+
+    def _smoothness_loss(self, projections: Tensor) -> Tensor:
+        stride = self.positive_stride
+        if projections.shape[0] <= stride:
+            return projections.new_zeros(())
+        return (projections[stride:] - projections[:-stride]).pow(2).mean()
 
     def forward(self, coarse_head: Tensor) -> Tuple[Tensor, Tensor, dict[str, Tensor]]:
         projections = self.projector(coarse_head)
-        temporal_loss = self._temporal_contrastive_loss(projections)
+        if self.temporal_mode == "none":
+            temporal_loss = projections.new_zeros(())
+        elif self.temporal_mode == "smooth":
+            temporal_loss = self._smoothness_loss(projections)
+        elif self.temporal_mode == "contrastive":
+            temporal_loss = self._temporal_contrastive_loss(projections)
+        else:
+            raise ValueError("temporal_consistency.mode must be one of {none, smooth, contrastive}.")
         vc_loss, variance_loss, covariance_loss = self._vicreg_loss(projections)
         info = {
-            "hierarchical_latent/temp_contrastive_loss": temporal_loss.detach(),
+            "hierarchical_latent/temp_loss": temporal_loss.detach(),
+            "hierarchical_latent/temp_contrastive_loss": (
+                temporal_loss.detach() if self.temporal_mode == "contrastive" else projections.new_zeros(())
+            ),
+            "hierarchical_latent/temp_smooth_loss": (
+                temporal_loss.detach() if self.temporal_mode == "smooth" else projections.new_zeros(())
+            ),
             "hierarchical_latent/vicreg_loss": vc_loss.detach(),
             "hierarchical_latent/vicreg_variance_loss": variance_loss.detach(),
             "hierarchical_latent/vicreg_covariance_loss": covariance_loss.detach(),
@@ -300,6 +394,7 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
         self.hierarchy_training_active = True
         self.hierarchical_integration = latent_config.integration
         self.hierarchical_residual_scale = latent_config.residual_scale
+        self.ablation_name = latent_config.get("ablation_name", "full")
 
         self.sparse_latent_heads = SparseLatentHeads(
             recurrent_state_size=self.recurrent_state_size,
@@ -308,6 +403,7 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             num_heads=latent_config.num_heads,
             head_dim=latent_config.head_dim,
             activation=latent_config.activation,
+            sparsity_mode=latent_config.sparsity.mode,
             sparsity_topk=latent_config.sparsity_topk,
         )
         self.sparse_latent_readout = nn.Linear(
@@ -335,7 +431,10 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             raise ValueError("hierarchical_latent.sparse_dynamics.strides must have length num_heads.")
         if len(alphas) != latent_config.num_heads:
             raise ValueError("hierarchical_latent.sparse_dynamics.alphas must have length 1 or num_heads.")
-        if strides[-1] != 1 or any(strides[i] <= strides[i + 1] for i in range(len(strides) - 1)):
+        require_strict_strides = latent_config.sparse_dynamics.get("require_strict_decreasing", True)
+        if require_strict_strides and (
+            strides[-1] != 1 or any(strides[i] <= strides[i + 1] for i in range(len(strides) - 1))
+        ):
             raise ValueError("hierarchical_latent.sparse_dynamics.strides must satisfy Delta_1 > ... > Delta_L = 1.")
         self.multi_stride_sparse_dynamics = MultiStrideSparseDynamics(
             recurrent_state_size=self.recurrent_state_size,
@@ -346,6 +445,8 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             strides=strides,
             alphas=alphas,
             stop_gradient_lower_levels=latent_config.sparse_dynamics.stop_gradient_lower_levels,
+            target_stop_gradient=latent_config.sparse_dynamics.target_stop_gradient,
+            action_mode=latent_config.sparse_dynamics.action_mode,
         )
         gammas = list(latent_config.sparsity.gammas)
         if len(gammas) == 1:
@@ -357,9 +458,12 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             head_dim=latent_config.head_dim,
             projection_hidden_size=latent_config.temporal_consistency.projection_hidden_size,
             projection_dim=latent_config.temporal_consistency.projection_dim,
+            projector_type=latent_config.temporal_consistency.projector_type,
+            temporal_mode=latent_config.temporal_consistency.mode,
             positive_stride=latent_config.temporal_consistency.positive_stride,
             temperature=latent_config.temporal_consistency.temperature,
             std_target=latent_config.variance_covariance.std_target,
+            vc_mode=latent_config.variance_covariance.mode,
             variance_weight=latent_config.variance_covariance.variance_weight,
             covariance_weight=latent_config.variance_covariance.covariance_weight,
         )
@@ -400,6 +504,8 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
                 "hierarchical_latent/active_ratio": zero.detach(),
                 "hierarchical_latent/mean_abs": zero.detach(),
                 "hierarchical_latent/sparsity_loss": zero.detach(),
+                "hierarchical_latent/num_heads": zero.detach() + self.config.hierarchical_latent.num_heads,
+                "hierarchical_latent/head_dim": zero.detach() + self.config.hierarchical_latent.head_dim,
             }
             return recurrent_states, None
 
@@ -432,6 +538,8 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
                 "hierarchical_latent/active_ratio": active_ratio.detach(),
                 "hierarchical_latent/mean_abs": mean_abs.detach(),
                 "hierarchical_latent/sparsity_loss": sparsity_loss.detach(),
+                "hierarchical_latent/num_heads": active_ratio.detach() * 0 + self.config.hierarchical_latent.num_heads,
+                "hierarchical_latent/head_dim": active_ratio.detach() * 0 + self.config.hierarchical_latent.head_dim,
                 **recon_info,
                 **sparse_dynamics_info,
                 **regularizer_info,

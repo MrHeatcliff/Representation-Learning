@@ -44,7 +44,7 @@ def parse_args():
     # atari100k, ratio=1, gradient_step=100k
     parser.add_argument("--running-steps", type=int, default=100_000)  # 100k
     parser.add_argument("--eval-interval", type=int, default=2_000)  # 50 logs
-    parser.add_argument("--replay-ratio", type=int, default=1)
+    parser.add_argument("--replay-ratio", type=float, default=1)
     parser.add_argument("--buffer-size", type=int, default=1_000_000)
     parser.add_argument("--start-training", type=int, default=1024)
     parser.add_argument("--batch-size", type=int, default=16)

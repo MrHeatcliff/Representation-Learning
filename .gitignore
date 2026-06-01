@@ -35,3 +35,5 @@ Gemfile
 Gemfile.lock
 _config.yml
 _site/
+
+paper.txt

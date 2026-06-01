@@ -150,13 +150,19 @@ class HierarchicalDreamer_Learner(DreamerV3_Learner):
         if sparsity_loss is None:
             sparsity_loss = torch.zeros((), device=self.device)
         loss_weights = self._auxiliary_loss_weights()
+        wm_loss = (kl_loss + observation_loss + reward_loss + continue_loss).mean()
+        weighted_hierarchical_loss = loss_weights.hierarchical * hierarchical_loss
+        weighted_sparse_dynamics_loss = loss_weights.sparse_dynamics * sparse_dynamics_loss
+        weighted_temporal_loss = loss_weights.temporal * temporal_loss
+        weighted_vicreg_loss = loss_weights.variance_covariance * vicreg_loss
+        weighted_sparsity_loss = loss_weights.sparsity * sparsity_loss
         model_loss = (
-            (kl_loss + observation_loss + reward_loss + continue_loss).mean() +
-            loss_weights.hierarchical * hierarchical_loss +
-            loss_weights.sparse_dynamics * sparse_dynamics_loss +
-            loss_weights.temporal * temporal_loss +
-            loss_weights.variance_covariance * vicreg_loss +
-            loss_weights.sparsity * sparsity_loss
+            wm_loss +
+            weighted_hierarchical_loss +
+            weighted_sparse_dynamics_loss +
+            weighted_temporal_loss +
+            weighted_vicreg_loss +
+            weighted_sparsity_loss
         )
 
         self.optimizer['model'].zero_grad()
@@ -195,11 +201,17 @@ class HierarchicalDreamer_Learner(DreamerV3_Learner):
             "model_loss/rew_loss": reward_loss.mean().item(),
             "model_loss/continue_loss": continue_loss.mean().item(),
             "model_loss/kl_loss": kl_loss.mean().item(),
+            "model_loss/world_model_loss": wm_loss.item(),
             "model_loss/hierarchical_recon_loss": hierarchical_loss.item(),
             "model_loss/sparse_dynamics_loss": sparse_dynamics_loss.item(),
             "model_loss/temporal_contrastive_loss": temporal_loss.item(),
             "model_loss/variance_covariance_loss": vicreg_loss.item(),
             "model_loss/sparsity_loss": sparsity_loss.item(),
+            "model_loss/weighted_hierarchical_recon_loss": weighted_hierarchical_loss.item(),
+            "model_loss/weighted_sparse_dynamics_loss": weighted_sparse_dynamics_loss.item(),
+            "model_loss/weighted_temporal_loss": weighted_temporal_loss.item(),
+            "model_loss/weighted_variance_covariance_loss": weighted_vicreg_loss.item(),
+            "model_loss/weighted_sparsity_loss": weighted_sparsity_loss.item(),
             "training_regime/phase1_active": float(phase1_active),
             "training_regime/encoder_lr": next(
                 group["lr"] for group in self.optimizer["model"].param_groups if group.get("name") == "encoder"

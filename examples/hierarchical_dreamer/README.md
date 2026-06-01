@@ -63,3 +63,9 @@ DreamerV3-baseline-<rom>-seed1-<steps>steps-<run_group>
 ```bash
 DEVICE=cuda:0 examples/hierarchical_dreamer/train_atari100k_all_regimes.sh
 ```
+
+Paper ablation command templates:
+
+```bash
+less examples/hierarchical_dreamer/ABLATION_COMMANDS.md
+```
