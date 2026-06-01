@@ -24,7 +24,16 @@ class HierarchicalDreamer_Learner(DreamerV3_Learner):
     ):
         super(HierarchicalDreamer_Learner, self).__init__(config, policy, action_shape, callback)
         self.training_regime = self.config.training_regime
+        self._model_param_groups_for_logging = {}
         self._configure_training_regime_optimizer()
+        self._compute_static_model_stats()
+
+    @staticmethod
+    def _count_params(parameters):
+        params = list(parameters)
+        total = sum(param.numel() for param in params)
+        trainable = sum(param.numel() for param in params if param.requires_grad)
+        return total, trainable
 
     def _configure_training_regime_optimizer(self):
         encoder_params = list(self.policy.world_model.encoder.parameters())
@@ -56,6 +65,63 @@ class HierarchicalDreamer_Learner(DreamerV3_Learner):
         if hierarchy_params:
             param_groups.append({"params": hierarchy_params, "lr": hierarchy_lr, "name": "hierarchy"})
         self.optimizer["model"] = torch.optim.Adam(param_groups)
+        self._model_param_groups_for_logging = {
+            "world_model": world_model_params,
+            "encoder": encoder_params,
+            "hierarchy": hierarchy_params,
+        }
+
+    def _compute_static_model_stats(self):
+        world_model_total, world_model_trainable = self._count_params(self.policy.world_model.parameters())
+        hierarchy_total, hierarchy_trainable = self._count_params(self.policy.hierarchical_latent_parameters())
+        actor_total, actor_trainable = self._count_params(self.policy.actor.parameters())
+        critic_total, critic_trainable = self._count_params(self.policy.critic.parameters())
+        self._static_model_stats = {
+            "compute/params_world_model": float(world_model_total),
+            "compute/params_world_model_trainable": float(world_model_trainable),
+            "compute/params_hierarchy": float(hierarchy_total),
+            "compute/params_hierarchy_trainable": float(hierarchy_trainable),
+            "compute/params_actor": float(actor_total),
+            "compute/params_actor_trainable": float(actor_trainable),
+            "compute/params_critic": float(critic_total),
+            "compute/params_critic_trainable": float(critic_trainable),
+            "compute/params_total": float(world_model_total + hierarchy_total + actor_total + critic_total),
+            "compute/params_total_trainable": float(
+                world_model_trainable + hierarchy_trainable + actor_trainable + critic_trainable
+            ),
+        }
+
+    @staticmethod
+    def _grad_norm(parameters, device):
+        norms = [param.grad.detach().norm(2) for param in parameters if param.grad is not None]
+        if not norms:
+            return torch.zeros((), device=device)
+        return torch.norm(torch.stack(norms), 2)
+
+    def _compute_runtime_stats(self):
+        stats = dict(self._static_model_stats)
+        stats.update({
+            "compute/grad_norm_world_model": self._grad_norm(
+                self._model_param_groups_for_logging.get("world_model", []), self.device
+            ).item(),
+            "compute/grad_norm_encoder": self._grad_norm(
+                self._model_param_groups_for_logging.get("encoder", []), self.device
+            ).item(),
+            "compute/grad_norm_hierarchy": self._grad_norm(
+                self._model_param_groups_for_logging.get("hierarchy", []), self.device
+            ).item(),
+        })
+        if torch.cuda.is_available() and torch.device(self.device).type == "cuda":
+            device_index = torch.device(self.device).index
+            if device_index is None:
+                device_index = torch.cuda.current_device()
+            stats.update({
+                "compute/cuda_memory_allocated_mb": torch.cuda.memory_allocated(device_index) / (1024 ** 2),
+                "compute/cuda_max_memory_allocated_mb": torch.cuda.max_memory_allocated(device_index) / (1024 ** 2),
+                "compute/cuda_memory_reserved_mb": torch.cuda.memory_reserved(device_index) / (1024 ** 2),
+                "compute/cuda_max_memory_reserved_mb": torch.cuda.max_memory_reserved(device_index) / (1024 ** 2),
+            })
+        return stats
 
     def _in_world_model_only_phase(self):
         return (
@@ -171,6 +237,7 @@ class HierarchicalDreamer_Learner(DreamerV3_Learner):
             torch.nn.utils.clip_grad_norm_(self.policy.world_model.parameters(), self.config.world_model.clip_gradients)
             torch.nn.utils.clip_grad_norm_(self.policy.hierarchical_latent_parameters(),
                                            self.config.world_model.clip_gradients)
+        runtime_stats = self._compute_runtime_stats()
         self.optimizer['model'].step()
 
         out = self.policy.actor_critic_forward(posteriors, recurrent_states, terms)
@@ -229,6 +296,7 @@ class HierarchicalDreamer_Learner(DreamerV3_Learner):
 
             "step/gradient_step": self.gradient_step
         })
+        info.update(runtime_stats)
         if self.config.harmony:
             info.update({'harmonizer/s1': self.policy.harmonizer_s1.get_harmony().item(),
                          'harmonizer/s2': self.policy.harmonizer_s2.get_harmony().item(),

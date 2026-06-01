@@ -143,6 +143,7 @@ class NestedReconstructionDecoders(nn.Module):
         loss = target_h.new_zeros(())
         info = {}
         target = target_h.detach()
+        previous_level_loss = None
         for level, decoder in enumerate(self.decoders):
             prefix = self._prefix_for_level(sparse_heads, level)
             reconstructed_h = decoder(prefix)
@@ -150,6 +151,11 @@ class NestedReconstructionDecoders(nn.Module):
             beta = self.betas[level]
             loss = loss + beta * level_loss
             info[f"hierarchical_latent/recon_loss_level_{level + 1}"] = level_loss.detach()
+            if previous_level_loss is not None:
+                info[f"hierarchical_latent/recon_marginal_gain_level_{level + 1}"] = (
+                    previous_level_loss - level_loss
+                ).detach()
+            previous_level_loss = level_loss
         info["hierarchical_latent/recon_loss"] = loss.detach()
         return loss, info
 
@@ -531,7 +537,8 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             transformed_states = recurrent_states + self.hierarchical_residual_scale * delta_h
 
         with torch.no_grad():
-            active_ratio = (sparse_heads.abs() > 1e-8).float().mean()
+            active_mask = (sparse_heads.abs() > 1e-8).float()
+            active_ratio = active_mask.mean()
             mean_abs = sparse_heads.abs().mean()
             self.latest_sparse_latent_info = {
                 "hierarchical_latent/active": torch.ones_like(active_ratio).detach(),
@@ -544,11 +551,67 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
                 **sparse_dynamics_info,
                 **regularizer_info,
             }
+            self.latest_sparse_latent_info.update(self._sparse_usage_diagnostics(sparse_heads, active_mask))
             for level, level_loss in enumerate(sparsity_loss_by_level):
                 self.latest_sparse_latent_info[
                     f"hierarchical_latent/sparsity_loss_level_{level + 1}"
                 ] = level_loss.detach()
         return transformed_states, sparse_heads
+
+    @staticmethod
+    def _effective_rank(covariance: Tensor) -> Tensor:
+        eigvals = torch.linalg.eigvalsh(covariance).clamp_min(0)
+        eigsum = eigvals.sum()
+        if eigsum <= 0:
+            return covariance.new_zeros(())
+        probs = eigvals / eigsum.clamp_min(1e-8)
+        entropy = -(probs * torch.log(probs.clamp_min(1e-8))).sum()
+        return torch.exp(entropy)
+
+    @staticmethod
+    def _offdiag_norm(covariance: Tensor) -> Tensor:
+        diagonal = torch.diag(torch.diagonal(covariance))
+        return (covariance - diagonal).pow(2).mean().sqrt()
+
+    @staticmethod
+    def _utilization_entropy(active_mask: Tensor) -> Tensor:
+        usage = active_mask.reshape(-1, active_mask.shape[-1]).mean(dim=0)
+        total = usage.sum()
+        if total <= 0:
+            return active_mask.new_zeros(())
+        probs = usage / total.clamp_min(1e-8)
+        entropy = -(probs * torch.log(probs.clamp_min(1e-8))).sum()
+        return entropy / torch.log(torch.as_tensor(float(active_mask.shape[-1]), device=active_mask.device))
+
+    def _sparse_usage_diagnostics(self, sparse_heads: Tensor, active_mask: Tensor) -> dict[str, Tensor]:
+        info = {}
+        flat_by_level = sparse_heads.reshape(-1, sparse_heads.shape[-2], sparse_heads.shape[-1])
+        active_by_level = active_mask.reshape(-1, active_mask.shape[-2], active_mask.shape[-1])
+        dead_threshold = self.config.hierarchical_latent.get("dead_feature_threshold", 1e-6)
+        for level in range(flat_by_level.shape[-2]):
+            level_values = flat_by_level[:, level, :]
+            level_active = active_by_level[:, level, :]
+            centered = level_values - level_values.mean(dim=0, keepdim=True)
+            variances = centered.var(dim=0, unbiased=False)
+            if centered.shape[0] > 1:
+                covariance = centered.transpose(0, 1) @ centered / (centered.shape[0] - 1)
+                effective_rank = self._effective_rank(covariance)
+                offdiag_norm = self._offdiag_norm(covariance)
+            else:
+                effective_rank = level_values.new_zeros(())
+                offdiag_norm = level_values.new_zeros(())
+            alive_ratio = (level_active.mean(dim=0) > dead_threshold).float().mean()
+            level_prefix = f"hierarchical_latent/level_{level + 1}"
+            info[f"{level_prefix}_active_ratio"] = level_active.mean().detach()
+            info[f"{level_prefix}_alive_ratio"] = alive_ratio.detach()
+            info[f"{level_prefix}_dead_ratio"] = (1.0 - alive_ratio).detach()
+            info[f"{level_prefix}_mean_abs"] = level_values.abs().mean().detach()
+            info[f"{level_prefix}_min_variance"] = variances.min().detach()
+            info[f"{level_prefix}_mean_variance"] = variances.mean().detach()
+            info[f"{level_prefix}_effective_rank"] = effective_rank.detach()
+            info[f"{level_prefix}_offdiag_cov_norm"] = offdiag_norm.detach()
+            info[f"{level_prefix}_utilization_entropy"] = self._utilization_entropy(level_active).detach()
+        return info
 
     def model_forward(
         self,

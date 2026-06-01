@@ -1,22 +1,16 @@
-# HTS-WM Experiment Command Templates
+# HTS-WM Paper Experiment Command Templates
 
-This file maps the paper draft's tables, figures, and ablations to runnable
-config flags. Commands use a two-step pattern:
+This file maps every current `paper.txt` table and figure to runnable configs,
+known gaps, and command templates. Use the labels from the paper as stable IDs
+for W&B run names, generated config names, artifact folders, and plot scripts.
 
-1. Generate a YAML config with `make_ablation_config.py`.
-2. Launch it with `train_ablation.sh`.
+Status legend:
 
-The launcher defaults to a current-official-DreamerV3-style update frequency:
-
-```bash
-REPLAY_RATIO=0.25
-```
-
-For paper-ratio alignment, use:
-
-```bash
-REPLAY_RATIO=0.125
-```
+- `READY`: can be launched with the current Hierarchical Dreamer code.
+- `PARTIAL`: the main training variant can run, but some baselines, metrics, or
+  plot extraction are missing.
+- `MISSING`: needs new environment, baseline implementation, analysis script, or
+  metric logging before it can be produced.
 
 ## Common Setup
 
@@ -28,34 +22,97 @@ OUT=examples/hierarchical_dreamer/config/generated_configs
 DEVICE=cuda:0
 WANDB_MODE=online
 PROJECT_NAME=HTS-WM-Ablations
+ENV_ID=ALE/Breakout-v5
 RUNNING_STEPS=100000
+
+# XuanCe replay_ratio is minibatch updates per agent step.
+# Approximate DreamerV3 current-main train_ratio=256 with 16x64 batches:
 REPLAY_RATIO=0.25
+
+# Approximate DreamerV3 paper replay_ratio=128 with 16x64 batches:
+# REPLAY_RATIO=0.125
 ```
 
-## Full HTS-WM
+Generate and launch pattern:
 
 ```bash
 .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
   --base "$BASE" \
-  --output "$OUT/full.yaml" \
-  --set hierarchical_latent.ablation_name=full
+  --output "$OUT/<experiment_id>.yaml" \
+  --set hierarchical_latent.ablation_name=<experiment_id>
 
-CONFIG_FILE=config/generated_configs/full.yaml \
-RUN_NAME=full-two_phase-breakout-seed1 \
-DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
+CONFIG_FILE=config/generated_configs/<experiment_id>.yaml \
+RUN_NAME=<experiment_id>-breakout-seed1 \
+ENV_ID=$ENV_ID DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
 RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
 examples/hierarchical_dreamer/train_ablation.sh
 ```
 
-## Table: Baseline Ladder
+## Currently Exposed Flags
+
+```bash
+# hierarchy shape
+--set hierarchical_latent.num_heads=6
+--set hierarchical_latent.head_dim=32
+--set hierarchical_latent.sparsity_topk='[8,8,8,8,8,8]'
+
+# nested reconstruction
+--set hierarchical_latent.reconstruction.betas='[1,1,1,1,1,1]'
+--set hierarchical_latent.reconstruction.stop_gradient_lower_levels=true
+
+# sparse dynamics
+--set hierarchical_latent.sparse_dynamics.strides='[32,16,8,4,2,1]'
+--set hierarchical_latent.sparse_dynamics.alphas='[1,1,1,1,1,1]'
+--set hierarchical_latent.sparse_dynamics.stop_gradient_lower_levels=true
+--set hierarchical_latent.sparse_dynamics.require_strict_decreasing=true
+--set hierarchical_latent.sparse_dynamics.target_stop_gradient=true
+--set hierarchical_latent.sparse_dynamics.action_mode=subsequence
+
+# temporal and collapse control
+--set hierarchical_latent.temporal_consistency.mode=contrastive
+--set hierarchical_latent.temporal_consistency.projector_type=nonlinear
+--set hierarchical_latent.temporal_consistency.projection_dim=64
+--set hierarchical_latent.temporal_consistency.far_negative_mode=hard
+--set hierarchical_latent.variance_covariance.mode=both
+
+# sparsity
+--set hierarchical_latent.sparsity.mode=level_topk
+--set hierarchical_latent.sparsity.gammas='[0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]'
+
+# loss weights
+--set hierarchical_latent.loss_weights.hierarchical=1.0
+--set hierarchical_latent.loss_weights.sparse_dynamics=1.0
+--set hierarchical_latent.loss_weights.temporal=1.0
+--set hierarchical_latent.loss_weights.variance_covariance=1.0
+--set hierarchical_latent.loss_weights.sparsity=1.0
+
+# training regime
+--set training_regime.name=two_phase
+--set training_regime.freeze_encoder=false
+--set training_regime.wm_only_phase1=true
+--set training_regime.phase1_gradient_steps=20000
+--set training_regime.encoder_lr_scale=0.1
+--set training_regime.hierarchy_lr_scale=1.0
+
+# backbone knobs already present in config
+--set world_model.kl_dynamic=0.5
+--set world_model.kl_representation=0.1
+--set world_model.kl_free_nats=1.0
+--set world_model.recurrent_model.recurrent_state_size=512
+--set world_model.recurrent_model.dense_units=512
+--set world_model.discrete_size=32
+--set world_model.stochastic_size=32
+```
+
+## Baseline Commands
 
 ### Dreamer Backbone
 
-Use the existing baseline entrypoint:
+`READY` for the local XuanCe DreamerV3 baseline.
 
 ```bash
 .venv/bin/python examples/dreamer_v3/dreamer_v3_atari.py \
-  --env-id ALE/Breakout-v5 \
+  --env-id "$ENV_ID" \
   --device "$DEVICE" \
   --logger wandb \
   --project-name "$PROJECT_NAME" \
@@ -68,9 +125,26 @@ Use the existing baseline entrypoint:
   --benchmark 1
 ```
 
+### Full HTS-WM
+
+`READY`.
+
+```bash
+.venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
+  --base "$BASE" \
+  --output "$OUT/full_htswm.yaml" \
+  --set hierarchical_latent.ablation_name=full_htswm
+
+CONFIG_FILE=config/generated_configs/full_htswm.yaml \
+RUN_NAME=full-htswm-breakout-seed1 \
+ENV_ID=$ENV_ID DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
+RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
 ### Matryoshka-Only Port
 
-Nested sparse reconstruction on, temporal/dynamics/VC off.
+`READY`: nested reconstruction on; sparse dynamics, temporal, and VC off.
 
 ```bash
 .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
@@ -82,18 +156,71 @@ Nested sparse reconstruction on, temporal/dynamics/VC off.
   --set hierarchical_latent.loss_weights.variance_covariance=0.0 \
   --set hierarchical_latent.temporal_consistency.mode=none \
   --set hierarchical_latent.variance_covariance.mode=none
+```
 
-CONFIG_FILE=config/generated_configs/matryoshka_only.yaml \
-RUN_NAME=matryoshka-only-breakout-seed1 \
-DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
-RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
-examples/hierarchical_dreamer/train_ablation.sh
+### Static Recon-Only Hierarchy
+
+`READY`: same as Matryoshka-only but keeps optional VC/sparsity as architecture
+diagnostics.
+
+```bash
+.venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
+  --base "$BASE" \
+  --output "$OUT/recon_only_hierarchy.yaml" \
+  --set hierarchical_latent.ablation_name=recon_only_hierarchy \
+  --set hierarchical_latent.loss_weights.sparse_dynamics=0.0 \
+  --set hierarchical_latent.loss_weights.temporal=0.0 \
+  --set hierarchical_latent.temporal_consistency.mode=none
+```
+
+### HTS-WM Without Individual Losses
+
+`READY`.
+
+```bash
+# no temporal regularizer
+--set hierarchical_latent.ablation_name=no_l_temp \
+--set hierarchical_latent.loss_weights.temporal=0.0 \
+--set hierarchical_latent.temporal_consistency.mode=none
+
+# no variance-covariance regularizer
+--set hierarchical_latent.ablation_name=no_l_vc \
+--set hierarchical_latent.loss_weights.variance_covariance=0.0 \
+--set hierarchical_latent.variance_covariance.mode=none
+
+# no sparse dynamics
+--set hierarchical_latent.ablation_name=no_l_sdyn \
+--set hierarchical_latent.loss_weights.sparse_dynamics=0.0
+
+# no nested reconstruction
+--set hierarchical_latent.ablation_name=no_l_hier \
+--set hierarchical_latent.loss_weights.hierarchical=0.0
+```
+
+### Flat Single-Level SAE
+
+`READY` as a sparsity-only approximation with `L=1`.
+
+```bash
+.venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
+  --base "$BASE" \
+  --output "$OUT/flat_single_level_sae.yaml" \
+  --set hierarchical_latent.ablation_name=flat_single_level_sae \
+  --set hierarchical_latent.num_heads=1 \
+  --set hierarchical_latent.sparsity_topk='[48]' \
+  --set hierarchical_latent.reconstruction.betas='[1.0]' \
+  --set hierarchical_latent.sparse_dynamics.strides='[1]' \
+  --set hierarchical_latent.sparse_dynamics.alphas='[1.0]' \
+  --set hierarchical_latent.loss_weights.sparse_dynamics=0.0 \
+  --set hierarchical_latent.loss_weights.temporal=0.0 \
+  --set hierarchical_latent.loss_weights.variance_covariance=0.0
 ```
 
 ### Flat Multi-Horizon Control
 
-This is approximated by `L=1` with sparse dynamics enabled. A true flat
-multi-head implementation is still future work.
+`PARTIAL`: current approximation is `L=1` plus dynamics. A true flat
+multi-horizon baseline with multiple horizon heads but no nested hierarchy is
+not implemented yet.
 
 ```bash
 .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
@@ -104,17 +231,560 @@ multi-head implementation is still future work.
   --set hierarchical_latent.sparsity_topk='[48]' \
   --set hierarchical_latent.reconstruction.betas='[1.0]' \
   --set hierarchical_latent.sparse_dynamics.strides='[1]' \
-  --set hierarchical_latent.sparse_dynamics.alphas='[1.0]' \
-  --set hierarchical_latent.sparsity.gammas='[0.0001]'
+  --set hierarchical_latent.sparse_dynamics.alphas='[1.0]'
+```
 
-CONFIG_FILE=config/generated_configs/flat_single_level_dynamics.yaml \
-RUN_NAME=flat-single-level-dynamics-breakout-seed1 \
-DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
-RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
+### Dense Multi-Stride
+
+`READY`: disables sparsity while keeping multiple levels and strides.
+
+```bash
+--set hierarchical_latent.ablation_name=dense_multi_stride \
+--set hierarchical_latent.sparsity.mode=none \
+--set hierarchical_latent.loss_weights.sparsity=0.0
+```
+
+### Larger Flat Dreamer / Harmony / DyMo / SGF / T-SAE / External Methods
+
+`MISSING`: these need separate implementations or adapters. Keep them as paper
+rows only until official/adapted code exists.
+
+## External Baselines That Need User-Supplied Code or Specs
+
+I will not silently reimplement these from paper names alone because small
+implementation choices can change the comparison:
+
+- Harmony Dreamer: needs official/adapted loss harmonization implementation and
+  its tuning protocol.
+- DyMoDreamer: needs dynamic modulation modules and visual-task protocol.
+- SGF-style flat: needs exact projector, VICReg/flat latent objective, and
+  integration point.
+- T-SAE-style coarse temporal port: needs the intended temporal sparse AE
+  objective and how it attaches to Dreamer latents.
+- EAWM, TPC, RePo, Denoised MDPs, DreamerPro, THICK, CW-VAE/MTS3, SPARTAN,
+  EfficientZero V2, TD-MPC2: require official code, an adapter, or a precise
+  reduced-scope baseline spec.
+
+Runnable internal approximations are documented separately, but they should be
+reported as approximations rather than as those external methods.
+
+## Table Mapping
+
+### tab:protocol - Evaluation Protocol
+
+`PARTIAL`.
+
+Runnable now for Atari100K-style single-game XuanCe runs:
+
+```bash
+ENV_ID=ALE/Breakout-v5 RUNNING_STEPS=100000 REPLAY_RATIO=0.25 \
+CONFIG_FILE=config/generated_configs/full_htswm.yaml \
+RUN_NAME=tab-protocol-atari-breakout-full \
 examples/hierarchical_dreamer/train_ablation.sh
 ```
 
-## Table: Training Regime
+Missing for full table: Synthetic Multi-Timescale, Key-Door, Inventory,
+Video-Background DMC, Crafter, DMLab wrappers/protocols, and aggregate script.
+
+### tab:baselines - Core Baseline Taxonomy
+
+`PARTIAL`.
+
+Runnable rows now: Dreamer backbone, flat single-level SAE approximation,
+Matryoshka-only, recon-only hierarchy, dense multi-stride, no `L_temp`,
+no `L_vc`, HTS-WM.
+
+Missing rows: larger flat Dreamer, Harmony Dreamer, DyMoDreamer, SGF-style flat,
+true flat multi-horizon, T-SAE-style port, DyMoDreamer + HTS-WM.
+
+### tab:baseline-execution-tiers - Baseline Execution Tiers
+
+`PARTIAL`.
+
+Use the same runnable subset as `tab:baselines`. P1/P2 comparators are not wired.
+For omitted rows, record `not evaluated because implementation/assumption not
+available in current XuanCe branch`.
+
+### tab:main-results - Main Utility Summary
+
+`PARTIAL`.
+
+Can fill Atari/Dreamer/Matryoshka/HTS-WM cells from current runs. Memory, motion,
+distractor, DMC, Harmony, DyMo, and GPU-hour summaries need additional suites and
+baselines.
+
+### tab:hero-panel-slots - Hero Panel Slots
+
+`MISSING` as a final figure/table because most suites are not implemented.
+Atari100K slot can run now as a guardrail. Static-memory, multi-stage, and
+dynamic-distractor slots need environments.
+
+### tab:prefix - Prefix Refinement
+
+`PARTIAL`.
+
+Already logged:
+
+- `hierarchical_latent/recon_loss_level_*`
+- `hierarchical_latent/recon_marginal_gain_level_*`
+- `hierarchical_latent/active_ratio`
+
+Still missing as explicit table columns:
+
+- prefix reward/probe utility
+- per-prefix active feature count rather than global active ratio
+
+Run source config:
+
+```bash
+--set hierarchical_latent.ablation_name=tab_prefix_full
+```
+
+### tab:level-horizon - Level-Horizon Prediction Error
+
+`PARTIAL`.
+
+Already logged at training strides:
+
+- `hierarchical_latent/sdyn_loss_level_*`
+
+Missing:
+
+- evaluation error matrix at horizons `1,2,4,8,16,32` for every prefix, including
+  horizons not used as training strides
+- flat multi-horizon true baseline
+- active-feature-normalized predictive efficiency
+
+### tab:temporal-robustness - Boundary, Revisit, Nuisance
+
+`MISSING`.
+
+Current code can train temporal variants, but the table metrics are not logged:
+Boundary F1, delay, false-change rate, revisitation similarity, nuisance
+sensitivity.
+
+Runnable training variants:
+
+```bash
+# no temporal
+--set hierarchical_latent.temporal_consistency.mode=none
+
+# smooth-only
+--set hierarchical_latent.temporal_consistency.mode=smooth
+
+# contrastive
+--set hierarchical_latent.temporal_consistency.mode=contrastive
+```
+
+`far_negative_mode` is currently config tracking only; true no/hard/soft sampler
+behavior still needs implementation.
+
+### tab:ablation-plan - Core Ablation Plan
+
+`PARTIAL`.
+
+Covered axes:
+
+- hierarchy depth
+- stride schedule
+- sparsity mode
+- budget schedule via `sparsity_topk`
+- temporal mode
+- projector type
+- VC mode
+- gradient stop pathways
+- training regime
+- RSSM KL/free-bit knobs
+- action conditioning
+
+Missing/partial axes:
+
+- adaptive sparse budget
+- true far-negative modes
+- separate trunks
+- partial gradient scaling
+- grouped loss harmonization
+- action-summary encoder
+
+### tab:collapse - Collapse Diagnostics
+
+`PARTIAL`.
+
+Runnable variants:
+
+```bash
+# no VC
+--set hierarchical_latent.variance_covariance.mode=none \
+--set hierarchical_latent.loss_weights.variance_covariance=0.0
+
+# variance only
+--set hierarchical_latent.variance_covariance.mode=variance
+
+# covariance only
+--set hierarchical_latent.variance_covariance.mode=covariance
+
+# smooth only
+--set hierarchical_latent.temporal_consistency.mode=smooth
+
+# global TopK
+--set hierarchical_latent.sparsity.mode=global_topk
+```
+
+Already logged: coarse projection std and VICReg components.
+
+Also logged now for each level:
+
+- `hierarchical_latent/level_*_active_ratio`
+- `hierarchical_latent/level_*_alive_ratio`
+- `hierarchical_latent/level_*_dead_ratio`
+- `hierarchical_latent/level_*_min_variance`
+- `hierarchical_latent/level_*_mean_variance`
+- `hierarchical_latent/level_*_effective_rank`
+- `hierarchical_latent/level_*_offdiag_cov_norm`
+- `hierarchical_latent/level_*_utilization_entropy`
+
+Still missing: full activation histograms as W&B histogram artifacts and
+checkpoint-level feature tables.
+
+### tab:compute - Compute Audit
+
+`PARTIAL`.
+
+Current logs now include:
+
+- `compute/params_*`
+- `compute/grad_norm_world_model`
+- `compute/grad_norm_encoder`
+- `compute/grad_norm_hierarchy`
+- CUDA memory metrics when CUDA is available
+
+Still missing: FLOPs/update, throughput, wall-clock train hours as a normalized
+aggregate, inference latency, and diagnostic-only analysis cost.
+
+### tab:cross-domain-protocol - Cross-Domain Protocol Audit
+
+`MISSING` for final table. Atari single-game settings are runnable; full DMC,
+Atari 26, memory, robustness, Crafter/Craftax, and DMLab protocols are not yet
+registered in this HTS-WM launcher.
+
+### tab:backbone-reproduction - Backbone Reproduction Audit
+
+`PARTIAL`.
+
+Dreamer baseline runs are available through `examples/dreamer_v3/dreamer_v3_atari.py`.
+Need a reporting script that records reference score, reproduced score, config
+hash, code commit, seed count, GPU, and environment wrapper differences.
+
+### tab:claim-evidence-registry - Claim-to-Evidence Registry
+
+`PARTIAL`.
+
+Covered direct evidence partially: prefix error, stride-level losses, collapse
+components.
+
+Missing: downstream suites, event/boundary metrics, revisit similarity,
+matched-param/FLOPs controls, nuisance robustness, second backbone, planner.
+
+### tab:experiment-suite-matrix - Experiment-Suite Matrix
+
+`MISSING` for most suites. Current code covers Atari-style XuanCe launcher only.
+
+### tab:dreamer-backbone-audits - DreamerV3-Style Backbone Ablations
+
+`PARTIAL`.
+
+Runnable now:
+
+```bash
+# replay ratio sweep
+for RR in 0.125 0.25 0.5 1.0; do
+  REPLAY_RATIO=$RR RUN_NAME=backbone-replay-ratio-${RR}-breakout-seed1 ...
+done
+
+# model size knobs
+--set world_model.recurrent_model.recurrent_state_size=256
+--set world_model.recurrent_model.dense_units=256
+--set world_model.discrete_size=16
+--set world_model.stochastic_size=16
+
+# KL/free-bit sweep
+--set world_model.kl_dynamic=0.5
+--set world_model.kl_representation=0.1
+--set world_model.kl_free_nats=1.0
+```
+
+Missing: no-observation loss, no reward/value gradients, detached decoder,
+imagination-horizon sweep if not exposed through config, normalization swaps.
+
+### tab:dreamerv3-robustness-audit - DreamerV3 Robustness Technique Audit
+
+`PARTIAL`.
+
+Runnable now: KL balance, free bits, model-size-related latent knobs.
+
+Missing or not exposed: symlog/no-symlog, return normalization disable, unimix
+disable audit, AGC/optimizer audit, observation-gradient pathway variants,
+reward/value-gradient pathway variants.
+
+### tab:matched-controls - Parameter/Compute/Update-Matched Controls
+
+`PARTIAL`.
+
+Runnable controls: Dreamer anchor, dense multi-stride, static sparse hierarchy,
+HTS-WM, flat single-level approximation.
+
+Missing: parameter-matched larger flat, FLOPs-matched larger flat, true flat
+partition, true flat multi-horizon, FLOPs/inference measurement scripts.
+
+### tab:scaling-grid - Data, Replay, and Model Scaling
+
+`PARTIAL`.
+
+Runnable:
+
+```bash
+# environment data
+for STEPS in 25000 50000 100000 200000; do
+  RUNNING_STEPS=$STEPS ...
+done
+
+# replay ratio
+for RR in 0.125 0.25 0.5 1.0; do
+  REPLAY_RATIO=$RR ...
+done
+
+# model size
+--set world_model.recurrent_model.recurrent_state_size=256
+--set world_model.recurrent_model.dense_units=256
+
+# hierarchy active budget
+--set hierarchical_latent.sparsity_topk='[4,4,4,4,4,4]'
+--set hierarchical_latent.sparsity_topk='[8,8,8,8,8,8]'
+--set hierarchical_latent.sparsity_topk='[16,16,16,16,16,16]'
+
+# sequence length
+SEQ_LEN=32
+SEQ_LEN=64
+SEQ_LEN=128
+```
+
+Missing: automatic aggregation and imagination horizon exposure if not already
+available in the config.
+
+### tab:nearest-method-matrix - Nearest-Method Control Matrix
+
+`PARTIAL`.
+
+Same status as `tab:baselines`. Current branch covers only internal controls;
+external prior-method baselines need separate implementations/adapters.
+
+### tab:offline-diagnosis - Offline Fixed-Buffer Diagnosis
+
+`MISSING`.
+
+Need fixed replay-buffer export, fixed-buffer loader, paired batch order, and
+representation-only training/evaluation mode.
+
+### tab:hyper-transfer - Hyperparameter Transfer Audit
+
+`PARTIAL`.
+
+Runnable sweeps:
+
+```bash
+# levels
+--set hierarchical_latent.num_heads=1
+--set hierarchical_latent.num_heads=2
+--set hierarchical_latent.num_heads=4
+--set hierarchical_latent.num_heads=6
+
+# strides
+--set hierarchical_latent.sparse_dynamics.strides='[32,16,8,4,2,1]'
+--set hierarchical_latent.sparse_dynamics.strides='[6,5,4,3,2,1]'
+--set hierarchical_latent.sparse_dynamics.strides='[1,1,1,1,1,1]' \
+--set hierarchical_latent.sparse_dynamics.require_strict_decreasing=false
+
+# loss weights
+--set hierarchical_latent.loss_weights.hierarchical=0.1
+--set hierarchical_latent.loss_weights.sparse_dynamics=0.1
+--set hierarchical_latent.loss_weights.temporal=0.1
+--set hierarchical_latent.loss_weights.variance_covariance=0.1
+
+# backbone LR ratio
+--set training_regime.encoder_lr_scale=0.0
+--set training_regime.encoder_lr_scale=0.1
+--set training_regime.encoder_lr_scale=1.0
+```
+
+Missing: adaptive budget and auxiliary linear warmup beyond staged two-phase.
+
+### tab:rollout-fidelity - Open-Loop Fidelity
+
+`MISSING`.
+
+Training logs have world-model loss components, but no matched open-loop
+evaluation script for latent/decoded error at horizons `1,4,8,16,32`.
+
+### tab:dmc-task-results
+
+`MISSING`.
+
+Need DMC Visual launcher, selected task list, evaluation protocol, and table
+aggregation.
+
+### tab:atari-task-results
+
+`PARTIAL`.
+
+Single Atari games can run by changing `ENV_ID`; full 26-game command matrix and
+HNS/IQM aggregation script are missing.
+
+Example:
+
+```bash
+for GAME in Breakout Pong Boxing Frostbite Gopher RoadRunner; do
+  ENV_ID=ALE/${GAME}-v5 RUN_NAME=atari-${GAME}-full-htswm-seed1 ...
+done
+```
+
+### tab:planner-audit
+
+`MISSING`.
+
+No hierarchical planner is implemented. Keep this as future/P2 unless planning
+efficiency becomes a claim.
+
+## Figure Mapping
+
+### fig:overview
+
+`MISSING` as a paper figure, but no training run is required. Need diagram asset
+showing Dreamer RSSM latent, sparse heads, nested reconstruction, multi-stride
+dynamics, temporal/VC regularizers, and baseline contrast.
+
+### fig:hero-results
+
+`MISSING` for final multi-suite figure. Requires outputs from `tab:main-results`,
+`fig:horizon-sweep`, and `fig:level-horizon`.
+
+### fig:horizon-sweep
+
+`MISSING`.
+
+Needs controlled environment where dependency horizon/subgoal count can be
+swept. Atari Breakout is not sufficient for this figure.
+
+### fig:rliable-summary
+
+`MISSING`.
+
+Need aggregate script for mean, median, IQM, optimality gap, probability of
+improvement, and performance profiles from multi-task results.
+
+### fig:level-horizon
+
+`PARTIAL`.
+
+Training-stride losses are logged, but full heatmap requires an offline
+evaluator over fixed horizons `1,2,4,8,16,32` and flat multi-horizon baseline.
+
+### fig:prefix-refinement
+
+`PARTIAL`.
+
+Current level reconstruction losses and marginal reconstruction gains can support
+a first version. Need optional reward/probe gain.
+
+### fig:spliced-trajectory
+
+`MISSING`.
+
+Need trajectory selection/export, event labels, revisitation labels, nuisance
+segments, and activation timeline plotting.
+
+### fig:nuisance-event
+
+`MISSING`.
+
+Need paired clean/perturbed trajectories and nuisance/event sensitivity metrics.
+
+### fig:collapse-dashboard
+
+`PARTIAL`.
+
+Use variants from `tab:collapse`. Need additional logging for effective rank,
+min variance, covariance norm, alive/dead ratio, histograms, and TopK entropy.
+
+### fig:compute-pareto
+
+`MISSING`.
+
+Need compute instrumentation from `tab:compute`.
+
+### fig:loss-interactions
+
+`PARTIAL`.
+
+Already logged: raw and weighted hierarchy loss contributions.
+
+Also logged now: gradient norms for world-model, encoder, and hierarchy parameter
+groups.
+
+Missing: pairwise gradient cosine similarities for `L_WM`, `L_hier`, `L_sdyn`,
+`L_temp`, `L_vc`, `L_sparse`; grouped harmonization.
+
+### fig:prefix-rollouts
+
+`MISSING`.
+
+Need detached diagnostic decoder/export script for coarse, middle, and full
+prefix rollouts.
+
+### fig:factor-recovery
+
+`MISSING`.
+
+Needs controlled factor benchmark with macro-state/subgoal/pose/velocity/
+distractor labels and probe scripts.
+
+### fig:backbone-audit
+
+`PARTIAL`.
+
+Replay-ratio, model-size, and data-budget sweeps are runnable. Learning-signal
+removal and normalization/optimizer audits are missing.
+
+### fig:scaling-transfer
+
+`PARTIAL`.
+
+Can run level, sparse-budget, replay, data, and model-size sweeps. Needs
+multi-suite transfer and aggregation scripts.
+
+### fig:openloop-rollouts
+
+`MISSING`.
+
+Same blocker as `tab:rollout-fidelity`: no matched open-loop evaluator yet.
+
+### fig:task-level-curves
+
+`PARTIAL`.
+
+W&B has train/test curves for individual runs. Need suite-level artifact
+collector and plotting script with consistent axes and confidence intervals.
+
+### fig:second-backbone
+
+`MISSING`.
+
+No second backbone port exists.
+
+## Core Sweep Templates
+
+### Training Regime
+
+`READY`.
 
 ```bash
 for REGIME in frozen_encoder two_phase fully_joint; do
@@ -126,168 +796,89 @@ for REGIME in frozen_encoder two_phase fully_joint; do
 
   CONFIG_FILE=config/generated_configs/regime_${REGIME}.yaml \
   RUN_NAME=regime-${REGIME}-breakout-seed1 \
-  DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
+  ENV_ID=$ENV_ID DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
   RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
   examples/hierarchical_dreamer/train_ablation.sh
 done
 ```
 
-## Table/Figure: Prefix Refinement
+### Levels
 
-Sweep hierarchy depth.
-
-```bash
-for L in 1 2 3 4 6; do
-  TOPK=$(python - <<PY
-print([8] * int("$L"))
-PY
-)
-  STRIDES=$(python - <<PY
-L = int("$L")
-base = [32, 16, 8, 4, 2, 1]
-print(base[-L:])
-PY
-)
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/levels_${L}.yaml" \
-    --set hierarchical_latent.ablation_name=levels_${L} \
-    --set hierarchical_latent.num_heads="$L" \
-    --set hierarchical_latent.sparsity_topk="$TOPK" \
-    --set hierarchical_latent.reconstruction.betas="$(python - <<PY
-print([1.0] * int("$L"))
-PY
-)" \
-    --set hierarchical_latent.sparse_dynamics.strides="$STRIDES" \
-    --set hierarchical_latent.sparse_dynamics.alphas="$(python - <<PY
-print([1.0] * int("$L"))
-PY
-)" \
-    --set hierarchical_latent.sparsity.gammas="$(python - <<PY
-print([0.0001] * int("$L"))
-PY
-)"
-
-  CONFIG_FILE=config/generated_configs/levels_${L}.yaml \
-  RUN_NAME=levels-${L}-breakout-seed1 \
-  DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
-  RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
-  examples/hierarchical_dreamer/train_ablation.sh
-done
-```
-
-Note: replace placeholder lists with semantic values if sweeping non-uniform
-betas/alphas/gammas. The generated command above is a template.
-
-## Table/Figure: Level-Horizon Prediction
-
-Stride schedule variants:
+`READY` if list-valued fields are kept length-compatible.
 
 ```bash
-declare -A STRIDES
-STRIDES[geometric]='[32,16,8,4,2,1]'
-STRIDES[linear]='[6,5,4,3,2,1]'
-STRIDES[uniform]='[1,1,1,1,1,1]'
-
-for NAME in geometric linear uniform; do
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/stride_${NAME}.yaml" \
-    --set hierarchical_latent.ablation_name=stride_${NAME} \
-    --set hierarchical_latent.sparse_dynamics.strides="${STRIDES[$NAME]}" \
-    --set hierarchical_latent.sparse_dynamics.require_strict_decreasing=false
-
-  CONFIG_FILE=config/generated_configs/stride_${NAME}.yaml \
-  RUN_NAME=stride-${NAME}-breakout-seed1 \
-  DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
-  RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
-  examples/hierarchical_dreamer/train_ablation.sh
-done
+# Example L=4.
+.venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
+  --base "$BASE" \
+  --output "$OUT/levels_4.yaml" \
+  --set hierarchical_latent.ablation_name=levels_4 \
+  --set hierarchical_latent.num_heads=4 \
+  --set hierarchical_latent.sparsity_topk='[8,8,8,8]' \
+  --set hierarchical_latent.reconstruction.betas='[1,1,1,1]' \
+  --set hierarchical_latent.sparse_dynamics.strides='[8,4,2,1]' \
+  --set hierarchical_latent.sparse_dynamics.alphas='[1,1,1,1]' \
+  --set hierarchical_latent.sparsity.gammas='[0.0001,0.0001,0.0001,0.0001]'
 ```
 
-The template disables strict stride validation for this sweep so uniform stride
-can be run as a negative control.
+### Stride Schedule
 
-## Table: Sparsity and Budget
+`READY`.
 
 ```bash
-for MODE in none l1 level_topk global_topk; do
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/sparsity_${MODE}.yaml" \
-    --set hierarchical_latent.ablation_name=sparsity_${MODE} \
-    --set hierarchical_latent.sparsity.mode="$MODE"
+# geometric
+--set hierarchical_latent.sparse_dynamics.strides='[32,16,8,4,2,1]'
 
-  CONFIG_FILE=config/generated_configs/sparsity_${MODE}.yaml \
-  RUN_NAME=sparsity-${MODE}-breakout-seed1 \
-  DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
-  RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
-  examples/hierarchical_dreamer/train_ablation.sh
-done
+# linear
+--set hierarchical_latent.sparse_dynamics.strides='[6,5,4,3,2,1]'
+
+# uniform negative control
+--set hierarchical_latent.sparse_dynamics.strides='[1,1,1,1,1,1]' \
+--set hierarchical_latent.sparse_dynamics.require_strict_decreasing=false
 ```
 
-Budget schedules:
+### Sparsity and Budget
+
+`READY`.
 
 ```bash
-# uniform
---set hierarchical_latent.sparsity_topk='[8,8,8,8,8,8]'
+# modes
+--set hierarchical_latent.sparsity.mode=none
+--set hierarchical_latent.sparsity.mode=l1
+--set hierarchical_latent.sparsity.mode=level_topk
+--set hierarchical_latent.sparsity.mode=global_topk
 
-# coarse-small / fine-large
---set hierarchical_latent.sparsity_topk='[2,4,6,8,10,12]'
-
-# coarse-large / fine-small
---set hierarchical_latent.sparsity_topk='[12,10,8,6,4,2]'
+# budget schedules
+--set hierarchical_latent.sparsity_topk='[8,8,8,8,8,8]'      # uniform
+--set hierarchical_latent.sparsity_topk='[2,4,6,8,10,12]'    # coarse-small/fine-large
+--set hierarchical_latent.sparsity_topk='[12,10,8,6,4,2]'    # coarse-large/fine-small
 ```
 
-## Table: Temporal and Far Negatives
+### Temporal, Projector, and VC
+
+`READY` except true far-negative sampler.
 
 ```bash
-for MODE in none smooth contrastive; do
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/temporal_${MODE}.yaml" \
-    --set hierarchical_latent.ablation_name=temporal_${MODE} \
-    --set hierarchical_latent.temporal_consistency.mode="$MODE"
+# temporal
+--set hierarchical_latent.temporal_consistency.mode=none
+--set hierarchical_latent.temporal_consistency.mode=smooth
+--set hierarchical_latent.temporal_consistency.mode=contrastive
 
-  CONFIG_FILE=config/generated_configs/temporal_${MODE}.yaml \
-  RUN_NAME=temporal-${MODE}-breakout-seed1 \
-  DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
-  RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
-  examples/hierarchical_dreamer/train_ablation.sh
-done
+# projector
+--set hierarchical_latent.temporal_consistency.projector_type=none
+--set hierarchical_latent.temporal_consistency.projector_type=linear
+--set hierarchical_latent.temporal_consistency.projector_type=nonlinear
+
+# VC
+--set hierarchical_latent.variance_covariance.mode=none
+--set hierarchical_latent.variance_covariance.mode=variance
+--set hierarchical_latent.variance_covariance.mode=covariance
+--set hierarchical_latent.variance_covariance.mode=both
 ```
 
-`far_negative_mode` is currently logged for config tracking. Implementing true
-none/hard/soft far-negative sampling requires an additional sampler change.
+### Gradient Flow
 
-## Table: Projector and VC
-
-```bash
-for PROJECTOR in none linear nonlinear; do
-  EXTRA=""
-  if [ "$PROJECTOR" = "none" ]; then
-    EXTRA="--set hierarchical_latent.temporal_consistency.projection_dim=32"
-  fi
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/projector_${PROJECTOR}.yaml" \
-    --set hierarchical_latent.ablation_name=projector_${PROJECTOR} \
-    --set hierarchical_latent.temporal_consistency.projector_type="$PROJECTOR" \
-    $EXTRA
-done
-
-for VC in none variance covariance both; do
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/vc_${VC}.yaml" \
-    --set hierarchical_latent.ablation_name=vc_${VC} \
-    --set hierarchical_latent.variance_covariance.mode="$VC"
-done
-```
-
-Launch each generated config with `train_ablation.sh`.
-
-## Table: Gradient Flow
+`PARTIAL`: stop-gradient switches are available; separate trunks and partial
+gradient scaling are not.
 
 ```bash
 # no stop-gradient
@@ -309,77 +900,33 @@ Launch each generated config with `train_ablation.sh`.
 --set hierarchical_latent.sparse_dynamics.target_stop_gradient=true
 ```
 
-Separate trunks and partial gradient scaling are not implemented yet.
+### Action Conditioning
 
-## Table: Action Conditioning
-
-```bash
-for ACTION_MODE in state_only current_action subsequence; do
-  .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-    --base "$BASE" \
-    --output "$OUT/action_${ACTION_MODE}.yaml" \
-    --set hierarchical_latent.ablation_name=action_${ACTION_MODE} \
-    --set hierarchical_latent.sparse_dynamics.action_mode="$ACTION_MODE"
-done
-```
-
-Action-summary encoder is not implemented yet.
-
-## Table: Objective Weights
+`READY` except action-summary encoder.
 
 ```bash
-# remove individual losses
---set hierarchical_latent.loss_weights.hierarchical=0.0
---set hierarchical_latent.loss_weights.sparse_dynamics=0.0
---set hierarchical_latent.loss_weights.temporal=0.0
---set hierarchical_latent.loss_weights.variance_covariance=0.0
---set hierarchical_latent.loss_weights.sparsity=0.0
-
-# auxiliary warmup is represented by two_phase phase1_gradient_steps
---set training_regime.wm_only_phase1=true
---set training_regime.phase1_gradient_steps=20000
+--set hierarchical_latent.sparse_dynamics.action_mode=state_only
+--set hierarchical_latent.sparse_dynamics.action_mode=current_action
+--set hierarchical_latent.sparse_dynamics.action_mode=subsequence
 ```
 
-Grouped harmonization is not implemented for hierarchy losses yet.
+## Missing Code/Metric Backlog
 
-## Table: RSSM Retuning
+Highest priority to make the paper figures/tables producible:
 
-Use existing world-model keys:
-
-```bash
---set world_model.kl_dynamic=0.5
---set world_model.kl_representation=0.1
---set world_model.kl_free_nats=1.0
---set world_model.recurrent_model.recurrent_state_size=512
---set world_model.recurrent_model.dense_units=512
---set world_model.discrete_size=32
---set world_model.stochastic_size=32
-```
-
-Changing RSSM size may require checkpoint isolation and fresh runs.
-
-## Figures and Required Logged Signals
-
-Already logged:
-
-- `hierarchical_latent/recon_loss_level_*`
-- `hierarchical_latent/sdyn_loss_level_*`
-- `hierarchical_latent/active_ratio`
-- `hierarchical_latent/mean_abs`
-- `hierarchical_latent/coarse_projection_std`
-- `hierarchical_latent/vicreg_*`
-- `model_loss/*`
-- `training_regime/*`
-- train/test episode rewards
-
-Still needed for full paper figures:
-
-- level-by-horizon error matrix for horizons not equal to training strides
-- prefix marginal reconstruction gain as an explicit metric
-- activation histogram and TopK utilization entropy
-- effective rank and per-dimension min variance
-- boundary F1, delay, false-change rate
-- revisitation similarity
-- nuisance sensitivity
-- GPU hours, peak VRAM, throughput, FLOPs estimate
-- gradient norms and gradient cosine similarities per objective
+1. Analysis evaluator for level-by-horizon error matrix and prefix reward/probe gain.
+2. W&B histogram/artifact export for sparse activations and checkpoint-level
+   feature tables.
+3. True temporal negative sampler: none/hard/soft far negatives with terminal
+   masks and revisitation-safe labels when available.
+4. Boundary/revisitation/nuisance metric suite and spliced-trajectory export.
+5. Compute instrumentation still missing: FLOPs/update, throughput, normalized
+   wall-clock aggregation, inference latency.
+6. Task suite launchers and aggregators: DMC Visual, Atari 26, controlled
+   horizon/memory environments, video-background robustness.
+7. Baseline adapters: larger flat Dreamer, Harmony, DyMo, SGF-style flat, true
+   flat multi-horizon, T-SAE-style temporal-only, external P1 comparators.
+8. Offline fixed-buffer protocol.
+9. Open-loop rollout evaluator and detached diagnostic prefix decoder.
+10. Plotting/aggregation scripts for RLiable-style metrics, task curves, and
+    paper-ready figures.
