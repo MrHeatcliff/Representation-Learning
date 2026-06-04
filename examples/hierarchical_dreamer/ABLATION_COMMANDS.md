@@ -4,6 +4,9 @@ This file maps every current `paper.txt` table and figure to runnable configs,
 known gaps, and command templates. Use the labels from the paper as stable IDs
 for W&B run names, generated config names, artifact folders, and plot scripts.
 
+For commands that can be pasted directly into the terminal, use
+`examples/hierarchical_dreamer/PASTE_READY_BASELINE_RUNS.md`.
+
 Status legend:
 
 - `READY`: can be launched with the current Hierarchical Dreamer code.
@@ -12,7 +15,222 @@ Status legend:
 - `MISSING`: needs new environment, baseline implementation, analysis script, or
   metric logging before it can be produced.
 
-## Common Setup
+## Start Here: Paste-Ready Breakout Runs
+
+Run one block at a time. These blocks are complete commands with no placeholders.
+Smoke runs are short dependency checks; full runs are the commands to fill the
+current Atari100K Breakout rows.
+
+### Local XuanCe Runs
+
+DreamerV3 anchor:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
+"$PYTHON_BIN" examples/dreamer_v3/dreamer_v3_atari.py \
+  --env-id ALE/Breakout-v5 \
+  --device cuda:0 \
+  --logger wandb \
+  --project-name HTS-WM-Baselines \
+  --wandb-mode online \
+  --wandb-run-name DreamerV3-baseline-breakout-seed1-100k \
+  --running-steps 100000 \
+  --replay-ratio 1 \
+  --batch-size 16 \
+  --seq-len 64 \
+  --benchmark 1
+```
+
+Full HTS-WM / Hierarchical Dreamer:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+CONFIG_FILE=config/atari100k_two_phase.yaml \
+RUN_NAME=HTS-WM-full-breakout-seed1-100k \
+ENV_ID=ALE/Breakout-v5 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-Baselines \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+T-SAE-style temporal-only control:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=tsae-style-breakout-seed1-100k \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-Baselines \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh
+```
+
+Same-code XuanCe HarmonyDream:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+ENV_ID=ALE/Breakout-v5 \
+SEED=1 \
+DEVICE=cuda:0 \
+REPLAY_RATIO=1 \
+RUNNING_STEPS=100000 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-Baselines \
+RUN_NAME=XuanCe-HarmonyDream-breakout-seed1-100k \
+examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
+```
+
+### DyMoDreamer Official-Code Runs
+
+Smoke:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=dymodreamer-smoke-breakout-seed0 \
+STEPS=1000 \
+TRAIN_RATIO=16 \
+EVAL_EVERY=500 \
+EVAL_EPISODE_NUM=1 \
+PREFILL=10 \
+PRETRAIN=1 \
+COMPILE=False \
+VIDEO_PRED_LOG=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
+```
+
+Full Atari100K:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=dymodreamer-atari100k-breakout-seed0 \
+STEPS=4e5 \
+TRAIN_RATIO=1024 \
+EVAL_EVERY=1e4 \
+EVAL_EPISODE_NUM=100 \
+COMPILE=False \
+VIDEO_PRED_LOG=True \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
+```
+
+### SGF Official-Code Runs
+
+Smoke:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=Breakout \
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=sgf-smoke-breakout-seed1 \
+WANDB_MODE=disabled \
+ENV_STEPS=1000 \
+INIT_STEPS=100 \
+EVAL_EVERY=500 \
+EVAL_EPISODES=1 \
+FINAL_EVAL_EPISODES=1 \
+AGENT_EVAL=final \
+WM_EVAL=none \
+WM_BATCH_SIZE=32 \
+AGENT_BATCH_SIZE=32 \
+AMP=False \
+COMPILE=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
+```
+
+Full Atari100K:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=Breakout \
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=sgf-atari100k-breakout-seed1 \
+PROJECT_NAME=HTS-WM-Baselines \
+WANDB_MODE=online \
+ENV_STEPS=100000 \
+INIT_STEPS=5000 \
+EVAL_EVERY=2500 \
+EVAL_EPISODES=20 \
+FINAL_EVAL_EPISODES=100 \
+AGENT_EVAL=all \
+WM_EVAL=none \
+AMP=True \
+COMPILE=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
+```
+
+### EAWM / EADream Official-Code Runs
+
+Smoke:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/eadream/bin/python \
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=eadream-smoke-breakout-seed0 \
+STEPS=1000 \
+EVAL_EVERY=500 \
+LOG_EVERY=500 \
+EVAL_EPISODE_NUM=1 \
+COMPILE=False \
+VIDEO_PRED_LOG=False \
+examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh
+```
+
+Full Atari100K:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/eadream/bin/python \
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=eadream-atari100k-breakout-seed0 \
+STEPS=4e5 \
+TRAIN_RATIO=1024 \
+EVAL_EVERY=3e4 \
+LOG_EVERY=3e4 \
+EVAL_EPISODE_NUM=100 \
+COMPILE=False \
+VIDEO_PRED_LOG=True \
+examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh
+```
+
+## Reference Only: Shared Variables And Config Templates
+
+Do not paste this section directly. It contains reusable variables and template
+patterns for generating new ablation configs.
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -33,7 +251,7 @@ REPLAY_RATIO=0.25
 # REPLAY_RATIO=0.125
 ```
 
-Generate and launch pattern:
+Reference generate-and-launch pattern. Replace every placeholder before running:
 
 ```bash
 .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
@@ -48,7 +266,10 @@ RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO \
 examples/hierarchical_dreamer/train_ablation.sh
 ```
 
-## Currently Exposed Flags
+## Reference Only: Currently Exposed Flags
+
+Do not paste these `--set` lines by themselves. They are arguments for
+`make_ablation_config.py`.
 
 ```bash
 # hierarchy shape
