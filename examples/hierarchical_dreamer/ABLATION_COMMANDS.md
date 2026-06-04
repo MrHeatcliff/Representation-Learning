@@ -278,15 +278,53 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
+EAWM EADream smoke:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/eadream/bin/python \
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=eadream-smoke-breakout-seed0 \
+STEPS=1000 \
+EVAL_EVERY=500 \
+LOG_EVERY=500 \
+EVAL_EPISODE_NUM=1 \
+COMPILE=False \
+VIDEO_PRED_LOG=False \
+examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh
+```
+
+EAWM EADream full Atari100K:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/eadream/bin/python \
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=eadream-atari100k-breakout-seed0 \
+STEPS=4e5 \
+TRAIN_RATIO=1024 \
+EVAL_EVERY=3e4 \
+LOG_EVERY=3e4 \
+EVAL_EPISODE_NUM=100 \
+COMPILE=False \
+VIDEO_PRED_LOG=True \
+examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh
+```
+
 #### Deferred Baselines
 
-EAWM is wrapped but environment setup is currently deferred due unstable
-network/dependency solving:
+EASimulus EAWM is still deferred until the `easimulus` env is installed and
+smoke-tested:
 
-- `examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh`
 - `examples/hierarchical_dreamer/baselines/run_eawm_easimulus_atari100k.sh`
 
-Keep EAWM marked `PARTIAL` until `eadream` or `easimulus` import smoke passes.
+Use EADream above as the current EAWM baseline path.
 
 ### Dreamer Backbone
 
@@ -613,12 +651,13 @@ Video-Background DMC, Crafter, DMLab wrappers/protocols, and aggregate script.
 
 Immediate runnable rows for Atari Breakout: Dreamer backbone, HTS-WM,
 T-SAE-style port, XuanCe same-code HarmonyDream, DyMoDreamer official-code
-wrapper, and SGF official-code wrapper. Also runnable through generated configs:
-flat single-level SAE approximation, Matryoshka-only, recon-only hierarchy,
-dense multi-stride, no `L_temp`, and no `L_vc`.
+wrapper, SGF official-code wrapper, and EAWM EADream official-code wrapper. Also
+runnable through generated configs: flat single-level SAE approximation,
+Matryoshka-only, recon-only hierarchy, dense multi-stride, no `L_temp`, and no
+`L_vc`.
 
 Missing rows: larger flat Dreamer, true flat multi-horizon, DyMoDreamer + HTS-WM.
-EAWM is wrapped but deferred until its dedicated env is solved.
+EAWM EASimulus remains deferred until its dedicated env is solved.
 
 ### tab:baseline-execution-tiers - Baseline Execution Tiers
 
@@ -900,11 +939,10 @@ available in the config.
 
 `PARTIAL`.
 
-Same status as `tab:baselines`. HarmonyDream, DyMoDreamer, and SGF now have
-official-code wrappers. T-SAE has official language-side wrappers and a
-same-code Dreamer-latent port, but the Atari wrapper still needs smoke/full-run
-validation. Other external prior-method baselines still need separate
-implementations or adapters.
+Same status as `tab:baselines`. HarmonyDream, DyMoDreamer, SGF, and EAWM
+EADream now have official-code wrappers and run commands. T-SAE has official
+language-side wrappers and a same-code Dreamer-latent port. Other external
+prior-method baselines still need separate implementations or adapters.
 
 ### tab:offline-diagnosis - Offline Fixed-Buffer Diagnosis
 

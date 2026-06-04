@@ -38,3 +38,17 @@ conflicts.
 - Create `eadream` and/or `easimulus` conda environments.
 - Run import smoke checks.
 - Run one short Atari smoke job before launching full Atari100K baselines.
+
+## Follow-up
+
+- Updated the EADream setup notes to use an Atari-only environment path and to
+  avoid installing DMC/MemoryMaze dependencies that trigger a MuJoCo source
+  build.
+- Added the pinned `dm-control==1.0.9`, `dm-env==1.6`, and `mujoco==2.3.5`
+  imports needed because EADream imports `dm_control` at module load time even
+  for Atari runs.
+- Patched local `external_baselines/EAWM/EADream/envs/wrappers.py` so
+  `dm_control` and `mjbindings` are imported lazily only when DMC/DMC-GB wrappers
+  need them. This avoids EGL/OSMesa import failures for Atari-only EADream runs.
+- Imported the bundled EAWM Atari ROMs into the `eadream` environment using
+  `atari_py.import_roms`; `breakout` is now present in `atari_py.list_games()`.

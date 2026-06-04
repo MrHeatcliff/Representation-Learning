@@ -22,6 +22,13 @@ code and environments.
 - Updated table mapping text for `tab:baselines` and `tab:main-results` to
   reflect the current run queue.
 
+## Follow-up
+
+- Added EAWM EADream smoke and full Atari100K commands after the `eadream`
+  environment and Atari ROM import were completed.
+- Left EASimulus EAWM deferred until its separate environment is installed and
+  smoke-tested.
+
 ## Notes
 
 - SGF smoke uses smaller `WM_BATCH_SIZE` and `AGENT_BATCH_SIZE` to avoid the
