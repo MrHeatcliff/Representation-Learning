@@ -94,7 +94,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
 ```
 
-## DyMoDreamer Full Atari100K
+## DyMoDreamer Full Atari100K (NOT DONE, PENDING in tmux atari3 (OOM))
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance

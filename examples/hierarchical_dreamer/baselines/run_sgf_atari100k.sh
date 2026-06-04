@@ -100,4 +100,4 @@ if [ "${SAVE}" = "True" ]; then
   args+=(--save)
 fi
 
-"${PYTHON_BIN}" "${args[@]}"
+WANDB_NAME="${RUN_NAME}" "${PYTHON_BIN}" "${args[@]}"
