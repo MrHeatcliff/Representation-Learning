@@ -38,3 +38,7 @@ _site/
 
 paper.txt
 external_baselines/HarmonyDream/
+external_baselines/DyMoDreamer/
+external_baselines/sgf/
+external_baselines/temporal-saes/
+external_baselines/EAWM/

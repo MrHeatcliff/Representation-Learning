@@ -80,6 +80,19 @@ class SparseLatentHeads(nn.Module):
                 mask = torch.zeros_like(level_heads).scatter_(-1, indices, 1.0)
                 sparse_heads.append(level_heads * mask)
             return torch.stack(sparse_heads, dim=-2)
+        if self.sparsity_mode == "level_batch_topk":
+            sparse_heads = []
+            for level, topk in enumerate(self.sparsity_topk):
+                level_heads = heads[..., level, :]
+                if topk is None or topk <= 0 or topk >= self.head_dim:
+                    sparse_heads.append(level_heads)
+                    continue
+                flat = level_heads.reshape(-1, self.head_dim)
+                keep = min(int(topk) * flat.shape[0], flat.numel())
+                _, indices = torch.topk(flat.abs().reshape(-1), k=keep, sorted=False)
+                mask = torch.zeros_like(flat).reshape(-1).scatter_(-1, indices, 1.0).reshape_as(flat)
+                sparse_heads.append((flat * mask).reshape_as(level_heads))
+            return torch.stack(sparse_heads, dim=-2)
         if self.sparsity_mode == "global_topk":
             topk = int(sum(max(int(k), 0) for k in self.sparsity_topk))
             flat = heads.reshape(*heads.shape[:-2], self.num_heads * self.head_dim)

@@ -106,6 +106,188 @@ examples/hierarchical_dreamer/train_ablation.sh
 
 ## Baseline Commands
 
+### Immediate Run Queue For Current Baselines
+
+Use this section first if the goal is to start filling the current paper tables
+with the baselines that already have local wrappers. These commands target
+Atari100K Breakout as the first reproducibility guardrail.
+
+#### Run Group: `tab:baselines` / `tab:main-results`
+
+Local XuanCe baselines use the repo `.venv`:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+export PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
+export ENV_ID=ALE/Breakout-v5
+export DEVICE=cuda:0
+export WANDB_MODE=online
+export PROJECT_NAME=HTS-WM-Baselines
+export RUNNING_STEPS=100000
+export REPLAY_RATIO=1
+```
+
+Run DreamerV3 anchor:
+
+```bash
+"$PYTHON_BIN" examples/dreamer_v3/dreamer_v3_atari.py \
+  --env-id "$ENV_ID" \
+  --device "$DEVICE" \
+  --logger wandb \
+  --project-name "$PROJECT_NAME" \
+  --wandb-mode "$WANDB_MODE" \
+  --wandb-run-name DreamerV3-baseline-breakout-seed1-100k \
+  --running-steps "$RUNNING_STEPS" \
+  --replay-ratio "$REPLAY_RATIO" \
+  --batch-size 16 \
+  --seq-len 64 \
+  --benchmark 1
+```
+
+Run full HTS-WM:
+
+```bash
+CONFIG_FILE=config/atari100k_two_phase.yaml \
+RUN_NAME=HTS-WM-full-breakout-seed1-100k \
+ENV_ID=$ENV_ID DEVICE=$DEVICE WANDB_MODE=$WANDB_MODE PROJECT_NAME=$PROJECT_NAME \
+RUNNING_STEPS=$RUNNING_STEPS REPLAY_RATIO=$REPLAY_RATIO PYTHON_BIN=$PYTHON_BIN \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+Run T-SAE-style temporal-only control:
+
+```bash
+PYTHON_BIN=$PYTHON_BIN \
+SEED=1 \
+DEVICE=$DEVICE \
+RUN_NAME=tsae-style-breakout-seed1-100k \
+WANDB_MODE=$WANDB_MODE \
+PROJECT_NAME=$PROJECT_NAME \
+RUNNING_STEPS=$RUNNING_STEPS \
+REPLAY_RATIO=$REPLAY_RATIO \
+examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh
+```
+
+Run same-code XuanCe HarmonyDream:
+
+```bash
+PYTHON_BIN=$PYTHON_BIN \
+ENV_ID=$ENV_ID \
+SEED=1 \
+DEVICE=$DEVICE \
+REPLAY_RATIO=$REPLAY_RATIO \
+RUNNING_STEPS=$RUNNING_STEPS \
+WANDB_MODE=$WANDB_MODE \
+PROJECT_NAME=$PROJECT_NAME \
+RUN_NAME=XuanCe-HarmonyDream-breakout-seed1-100k \
+examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
+```
+
+#### Run Group: External Official-Code Baselines
+
+These commands use the existing `harmonydream` conda env that has already been
+used for DyMoDreamer and SGF import checks.
+
+DyMoDreamer smoke:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=dymodreamer-smoke-breakout-seed0 \
+STEPS=1000 \
+TRAIN_RATIO=16 \
+EVAL_EVERY=500 \
+EVAL_EPISODE_NUM=1 \
+PREFILL=10 \
+PRETRAIN=1 \
+COMPILE=False \
+VIDEO_PRED_LOG=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
+```
+
+DyMoDreamer full Atari100K:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=dymodreamer-atari100k-breakout-seed0 \
+STEPS=4e5 \
+TRAIN_RATIO=1024 \
+EVAL_EVERY=1e4 \
+EVAL_EPISODE_NUM=100 \
+COMPILE=False \
+VIDEO_PRED_LOG=True \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
+```
+
+SGF smoke. Keep small batch sizes for this smoke because the replay buffer is
+tiny at 1000 steps:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=Breakout \
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=sgf-smoke-breakout-seed1 \
+WANDB_MODE=disabled \
+ENV_STEPS=1000 \
+INIT_STEPS=100 \
+EVAL_EVERY=500 \
+EVAL_EPISODES=1 \
+FINAL_EVAL_EPISODES=1 \
+AGENT_EVAL=final \
+WM_EVAL=none \
+WM_BATCH_SIZE=32 \
+AGENT_BATCH_SIZE=32 \
+AMP=False \
+COMPILE=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
+```
+
+SGF full Atari100K:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+GAME=Breakout \
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=sgf-atari100k-breakout-seed1 \
+PROJECT_NAME=HTS-WM-Baselines \
+WANDB_MODE=online \
+ENV_STEPS=100000 \
+INIT_STEPS=5000 \
+EVAL_EVERY=2500 \
+EVAL_EPISODES=20 \
+FINAL_EVAL_EPISODES=100 \
+AGENT_EVAL=all \
+WM_EVAL=none \
+AMP=True \
+COMPILE=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
+```
+
+#### Deferred Baselines
+
+EAWM is wrapped but environment setup is currently deferred due unstable
+network/dependency solving:
+
+- `examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh`
+- `examples/hierarchical_dreamer/baselines/run_eawm_easimulus_atari100k.sh`
+
+Keep EAWM marked `PARTIAL` until `eadream` or `easimulus` import smoke passes.
+
 ### Dreamer Backbone
 
 `READY` for the local XuanCe DreamerV3 baseline.
@@ -277,10 +459,94 @@ examples/hierarchical_dreamer/baselines/run_harmonydream_atari100k.sh
 Details and protocol caveats:
 `examples/hierarchical_dreamer/baselines/HARMONYDREAM_BASELINE.md`.
 
-### Larger Flat Dreamer / DyMo / SGF / T-SAE / Other External Methods
+### DyMoDreamer External Baseline
 
-`MISSING`: these need separate implementations or adapters. Keep them as paper
-rows only until official/adapted code exists.
+`PARTIAL`: official upstream code has been cloned locally and wrapped, but it
+needs a separate dependency environment and a successful smoke run before it is
+paper-ready.
+
+```bash
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=dymodreamer-atari100k-breakout-seed0 \
+STEPS=4e5 \
+TRAIN_RATIO=1024 \
+EVAL_EVERY=1e4 \
+EVAL_EPISODE_NUM=100 \
+COMPILE=False \
+examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
+```
+
+Details and protocol caveats:
+`examples/hierarchical_dreamer/baselines/DYMODREAMER_BASELINE.md`.
+
+### SGF External Baseline
+
+`PARTIAL`: official upstream code has been cloned locally and wrapped. The
+current `harmonydream` env only needs `wandb`, `torchvision`, and `ale_py` before
+smoke testing.
+
+```bash
+GAME=Breakout \
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=sgf-atari100k-breakout-seed1 \
+PROJECT_NAME=HTS-WM-Baselines \
+WANDB_MODE=online \
+ENV_STEPS=100000 \
+INIT_STEPS=5000 \
+EVAL_EVERY=2500 \
+EVAL_EPISODES=20 \
+FINAL_EVAL_EPISODES=100 \
+AGENT_EVAL=all \
+WM_EVAL=none \
+AMP=True \
+COMPILE=False \
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
+examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
+```
+
+Details and protocol caveats:
+`examples/hierarchical_dreamer/baselines/SGF_BASELINE.md`.
+
+### EAWM External Baseline
+
+`PARTIAL`: official upstream code has been uploaded locally and wrapped. Use a
+dedicated `eadream` or `easimulus` environment before smoke testing.
+
+Preferred Dreamer-style EADream run:
+
+```bash
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/eadream/bin/python \
+GAME=breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=eadream-atari100k-breakout-seed0 \
+examples/hierarchical_dreamer/baselines/run_eawm_eadream_atari100k.sh
+```
+
+Optional Simulus-based EAWM run with W&B:
+
+```bash
+PYTHON_BIN=/home/dat.tt2/miniconda3/envs/easimulus/bin/python \
+GAME=Breakout \
+SEED=0 \
+DEVICE=cuda:0 \
+RUN_NAME=easimulus-eawm-atari100k-breakout-seed0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-Baselines \
+examples/hierarchical_dreamer/baselines/run_eawm_easimulus_atari100k.sh
+```
+
+Details and protocol caveats:
+`examples/hierarchical_dreamer/baselines/EAWM_BASELINE.md`.
+
+### Larger Flat Dreamer / T-SAE / Other External Methods
+
+`PARTIAL`: T-SAE-style now has a same-code Dreamer-latent launcher; larger flat
+Dreamer and several other external methods still need separate implementations
+or adapters.
 
 ## External Baselines That Need User-Supplied Code or Specs
 
@@ -291,11 +557,31 @@ implementation choices can change the comparison:
   official upstream code is also available locally and wrapped for Atari100K,
   but still needs a dedicated JAX environment and successful smoke run before
   marking paper-code-ready.
-- DyMoDreamer: needs dynamic modulation modules and visual-task protocol.
-- SGF-style flat: needs exact projector, VICReg/flat latent objective, and
-  integration point.
-- T-SAE-style coarse temporal port: needs the intended temporal sparse AE
-  objective and how it attaches to Dreamer latents.
+- DyMoDreamer: official upstream code is available locally and wrapped for
+  Atari100K, but still needs a dedicated dependency environment and successful
+  smoke run before marking paper-ready.
+- SGF: official upstream code is available locally and wrapped for Atari100K,
+  but still needs dependency completion and successful smoke run before marking
+  paper-ready.
+- EAWM: official upstream code is available locally and wrapped for Atari100K
+  via both EADream and EASimulus. It still needs dedicated environments and
+  smoke runs before marking paper-ready.
+- T-SAE-style coarse temporal port: this row is in the paper because it is the
+  nearest-method control for temporal sparse regularization without HTS-WM's
+  action-conditioned multi-stride dynamics. Official upstream T-SAE code is
+  available locally, but it trains sparse autoencoders on language-model
+  activations rather than Dreamer latents. A same-code Dreamer-latent
+  T-SAE-style adapter is available:
+
+```bash
+SEED=1 \
+DEVICE=cuda:0 \
+RUN_NAME=tsae-style-breakout-seed1 \
+WANDB_MODE=online \
+examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh
+```
+
+  See `examples/hierarchical_dreamer/baselines/TSAE_BASELINE.md`.
 - EAWM, TPC, RePo, Denoised MDPs, DreamerPro, THICK, CW-VAE/MTS3, SPARTAN,
   EfficientZero V2, TD-MPC2: require official code, an adapter, or a precise
   reduced-scope baseline spec.
@@ -325,14 +611,14 @@ Video-Background DMC, Crafter, DMLab wrappers/protocols, and aggregate script.
 
 `PARTIAL`.
 
-Runnable rows now: Dreamer backbone, flat single-level SAE approximation,
-Matryoshka-only, recon-only hierarchy, dense multi-stride, no `L_temp`,
-no `L_vc`, HTS-WM, and HarmonyDream as an external official-code baseline once
-its JAX environment is installed. The XuanCe same-code HarmonyDream baseline is
-runnable through `run_xuance_harmonydream_atari100k.sh`.
+Immediate runnable rows for Atari Breakout: Dreamer backbone, HTS-WM,
+T-SAE-style port, XuanCe same-code HarmonyDream, DyMoDreamer official-code
+wrapper, and SGF official-code wrapper. Also runnable through generated configs:
+flat single-level SAE approximation, Matryoshka-only, recon-only hierarchy,
+dense multi-stride, no `L_temp`, and no `L_vc`.
 
-Missing rows: larger flat Dreamer, DyMoDreamer, SGF-style flat, true flat
-multi-horizon, T-SAE-style port, DyMoDreamer + HTS-WM.
+Missing rows: larger flat Dreamer, true flat multi-horizon, DyMoDreamer + HTS-WM.
+EAWM is wrapped but deferred until its dedicated env is solved.
 
 ### tab:baseline-execution-tiers - Baseline Execution Tiers
 
@@ -346,10 +632,11 @@ available in current XuanCe branch`.
 
 `PARTIAL`.
 
-Can fill Atari/Dreamer/Matryoshka/HTS-WM cells from current runs. HarmonyDream
-can fill its Atari cell after the upstream JAX run completes. Memory, motion,
-distractor, DMC, DyMo, and GPU-hour summaries need additional suites and
-baselines.
+Can fill Atari/Dreamer/Matryoshka/HTS-WM cells from current runs. XuanCe
+HarmonyDream, DyMoDreamer, SGF, and T-SAE-style port now have direct run
+commands in the immediate queue above. EAWM is deferred until dependency setup is
+stable. Memory, motion, distractor, DMC, and GPU-hour summaries need additional
+suites and baselines.
 
 ### tab:hero-panel-slots - Hero Panel Slots
 
@@ -613,9 +900,11 @@ available in the config.
 
 `PARTIAL`.
 
-Same status as `tab:baselines`. HarmonyDream now has an official-code wrapper;
-other external prior-method baselines still need separate implementations or
-adapters.
+Same status as `tab:baselines`. HarmonyDream, DyMoDreamer, and SGF now have
+official-code wrappers. T-SAE has official language-side wrappers and a
+same-code Dreamer-latent port, but the Atari wrapper still needs smoke/full-run
+validation. Other external prior-method baselines still need separate
+implementations or adapters.
 
 ### tab:offline-diagnosis - Offline Fixed-Buffer Diagnosis
 
@@ -965,8 +1254,9 @@ Highest priority to make the paper figures/tables producible:
    wall-clock aggregation, inference latency.
 6. Task suite launchers and aggregators: DMC Visual, Atari 26, controlled
    horizon/memory environments, video-background robustness.
-7. Baseline adapters: larger flat Dreamer, Harmony, DyMo, SGF-style flat, true
-   flat multi-horizon, T-SAE-style temporal-only, external P1 comparators.
+7. Baseline adapters still missing: larger flat Dreamer, true flat multi-horizon,
+   external P1 comparators. T-SAE-style temporal-only on Dreamer latents is
+   implemented as a launcher but still needs validation runs.
 8. Offline fixed-buffer protocol.
 9. Open-loop rollout evaluator and detached diagnostic prefix decoder.
 10. Plotting/aggregation scripts for RLiable-style metrics, task curves, and
