@@ -18,6 +18,8 @@ wandb/
 .wandb/
 .pypirc
 .pytest_cache
+.venv/
+.pip-cache/
 
 debug.py
 debug_marl.py
@@ -42,3 +44,7 @@ external_baselines/DyMoDreamer/
 external_baselines/sgf/
 external_baselines/temporal-saes/
 external_baselines/EAWM/
+
+# Local one-off helper scripts for workspace setup / launch
+examples/hierarchical_dreamer/setup_local_xuance_env.sh
+examples/hierarchical_dreamer/run_full_htswm_breakout_seed1_100k.sh

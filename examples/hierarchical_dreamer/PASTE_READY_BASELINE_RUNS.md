@@ -23,7 +23,15 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
   --benchmark 1
 ```
 
-## Full HTS-WM
+## Full HTS-WM (DONE: Breakout seed 1 on 2026-06-04)
+
+Completed result summary:
+- Best checkpoint score: `15.33 +- 1.70` over `3` eval episodes
+- W&B run: `i95tp2se`
+- W&B URL:
+  `https://wandb.ai/ttdat170703-ho-chi-minh-city-university-of-technology/HTS-WM-Baselines/runs/i95tp2se`
+- Local summary:
+  `logs/hierarchical-dreamer/ablations/HTS-WM-full-breakout-seed1-100k/Breakout-v5/wandb/run-20260604_004917-i95tp2se/files/wandb-summary.json`
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
