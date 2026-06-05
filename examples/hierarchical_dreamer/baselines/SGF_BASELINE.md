@@ -12,7 +12,8 @@ than a guessed reimplementation inside XuanCe.
 
 ## Current Assessment
 
-Runnable path: `DONE` for Atari100K Breakout seed 1.
+Runnable path: `DONE` for Atari100K Breakout seed 1, `PARTIAL EXTERNAL` for
+paper-level reporting until more seeds/games are complete.
 
 SGF is a compact official PyTorch Atari codebase with W&B logging and a default
 Atari100K config. It is run directly as an external-code baseline rather than

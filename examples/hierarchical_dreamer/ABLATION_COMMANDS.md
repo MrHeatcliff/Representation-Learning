@@ -6,6 +6,8 @@ for W&B run names, generated config names, artifact folders, and plot scripts.
 
 For commands that can be pasted directly into the terminal, use
 `examples/hierarchical_dreamer/PASTE_READY_BASELINE_RUNS.md`.
+For the updated paper table/figure checklist, use
+`examples/hierarchical_dreamer/PAPER_EXPERIMENT_REGISTRY.md`.
 
 Status legend:
 
@@ -24,15 +26,23 @@ current Atari100K Breakout rows.
 Completed Breakout seed 1 runs are tracked in
 `examples/hierarchical_dreamer/RESULTS_TRACKER.md`.
 
+The updated paper requires final-checkpoint same-code Atari results with `100`
+eval episodes. Current DreamerV3 and HTS-WM runs are development-complete but
+not paper-final.
+
 | Method | Status | Score Used In Tracker | W&B Run | Notes |
 |---|---|---:|---|---|
-| DreamerV3 | DONE | `15.67 +- 2.05` | `cssk65zq` | Best checkpoint over 3 eval episodes. |
-| HTS-WM | DONE | `15.33 +- 1.70` | `i95tp2se` | Best checkpoint over 3 eval episodes. |
-| SGF | DONE | `41.53 +- 45.06` | `kcwh4nz5` | Final eval over 100 episodes. |
+| DreamerV3 | DEV_DONE | `15.67 +- 2.05` | `cssk65zq` | Best checkpoint over 3 eval episodes; not paper-final. |
+| HTS-WM | DEV_DONE | `15.33 +- 1.70` | `i95tp2se` | Best checkpoint over 3 eval episodes; not paper-final. |
+| SGF | PARTIAL EXTERNAL | `41.53 +- 45.06` | `kcwh4nz5` | Official-code final eval over 100 episodes, single seed. |
+
+Before paper-final same-code reruns, update the local launchers/configs for the
+paper protocol: final checkpoint only and `100` Atari eval episodes. The current
+paste-ready local DreamerV3/HTS-WM commands below remain development commands.
 
 ### Local XuanCe Runs
 
-DreamerV3 anchor (DONE: Breakout seed 1, W&B `cssk65zq`):
+DreamerV3 anchor (DEV_DONE: Breakout seed 1, W&B `cssk65zq`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -52,7 +62,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
   --benchmark 1
 ```
 
-Full HTS-WM / Hierarchical Dreamer (DONE: Breakout seed 1, W&B `i95tp2se`):
+Full HTS-WM / Hierarchical Dreamer (DEV_DONE: Breakout seed 1, W&B `i95tp2se`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -171,7 +181,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
-Full Atari100K (DONE: Breakout seed 1, W&B `kcwh4nz5`):
+Full Atari100K (PARTIAL EXTERNAL: Breakout seed 1, W&B `kcwh4nz5`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -357,7 +367,7 @@ export RUNNING_STEPS=100000
 export REPLAY_RATIO=1
 ```
 
-Run DreamerV3 anchor (DONE: Breakout seed 1, W&B `cssk65zq`):
+Run DreamerV3 anchor (DEV_DONE: Breakout seed 1, W&B `cssk65zq`):
 
 ```bash
 "$PYTHON_BIN" examples/dreamer_v3/dreamer_v3_atari.py \
@@ -374,7 +384,7 @@ Run DreamerV3 anchor (DONE: Breakout seed 1, W&B `cssk65zq`):
   --benchmark 1
 ```
 
-Run full HTS-WM (DONE: Breakout seed 1, W&B `i95tp2se`):
+Run full HTS-WM (DEV_DONE: Breakout seed 1, W&B `i95tp2se`):
 
 ```bash
 CONFIG_FILE=config/atari100k_two_phase.yaml \
@@ -484,7 +494,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
-SGF full Atari100K (DONE: Breakout seed 1, W&B `kcwh4nz5`):
+SGF full Atari100K (PARTIAL EXTERNAL: Breakout seed 1, W&B `kcwh4nz5`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance

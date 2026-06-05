@@ -1,0 +1,156 @@
+# Paper Experiment Registry
+
+This registry maps the updated `paper.txt` experiment plan to concrete result
+artifacts. Use LaTeX labels as stable IDs when naming configs, W&B runs, local
+folders, and generated figures.
+
+## Paper-Final Rules
+
+The updated paper explicitly requires:
+
+- same-code Dreamer variants use identical env steps, replay ratio, optimizer
+  updates, actor-critic, wrappers, and evaluation rules;
+- official-code baselines keep native protocols and must be labeled as such;
+- headline scores use the final checkpoint unless a benchmark protocol explicitly
+  says otherwise;
+- Atari 100K final evaluation uses `100` episodes and `5` seeds;
+- development runs with fewer seeds or best-checkpoint selection must be labeled
+  as development evidence, not paper-final results;
+- multi-task results require reliable aggregation: mean, median, IQM, optimality
+  gap, probability of improvement, and bootstrap confidence intervals.
+
+Current completed local XuanCe Breakout runs are useful smoke/dev evidence but
+are not paper-final because they used best-checkpoint reporting and `3` eval
+episodes. The completed SGF run is an official-code external baseline result on
+Breakout seed 1 with native final eval over `100` episodes.
+
+## Run Completion Workflow
+
+When a run finishes:
+
+1. Read `wandb-summary.json`, `config.yaml`, `wandb-metadata.json`, and terminal
+   `output.log` if present.
+2. Add one raw row to `RESULTS_TRACKER.md`.
+3. Update the relevant `tab:*` rows below from `TODO` to `PARTIAL` or `DONE`.
+4. Record whether the result is `paper-final`, `dev`, `smoke`, or
+   `official-code external`.
+5. If enough seeds are available, update aggregate rows and figure readiness.
+6. Add a short `change_logs/YYYY-MM-DD-*.md` entry.
+
+## Table Registry
+
+| Label | Priority | Paper Role | Required Inputs | Current Status | Where Results Will Be Filled |
+|---|---|---|---|---|---|
+| `tab:train-setup` | P0 | Shared Dreamer-style training setup | exact batch, seq len, optimizer, replay ratio, checkpoint rule, config hash | PARTIAL | `RESULTS_TRACKER.md`, run configs, W&B metadata |
+| `tab:protocol` | P0 | Evaluation-suite protocol | tasks, budgets, repeats, seeds, metrics per suite | PARTIAL | this registry, suite command docs |
+| `tab:metrics` | P0 | Metric definitions | implementation/log availability per metric | PARTIAL | this registry, future metric extractors |
+| `tab:baselines` | P0 | Core baseline taxonomy | method availability and scope | PARTIAL | baseline docs under `baselines/` |
+| `tab:baseline-execution-tiers` | P0/P1 | Required comparator tiers | compatibility and implementation status | PARTIAL | `PAPER_BASELINE_STATUS.md` if added; current baseline docs |
+| `tab:main-results` | P0 | Main utility summary | Memory, Motion, Distractor, DMC, Atari, GPU hours | TODO | aggregate tracker after paper-final runs |
+| `tab:hero-panel-slots` | P0 | Hero figure suite slots | selected final suites and controls | TODO | this registry after user freezes suite choices |
+| `tab:prefix` | P0 | Prefix refinement | per-prefix recon error, marginal gain, reward error, active features | TODO | HTS-WM diagnostic logs / future extractor |
+| `tab:level-horizon` | P0 | Level-horizon specialization | prediction NRMSE for horizons `1,2,4,8,16,32` | TODO | HTS-WM diagnostic logs / future extractor |
+| `tab:temporal-robustness` | P0 | Boundary, revisitation, nuisance robustness | smoothness, boundary F1, delay, false change, revisit sim, nuisance sensitivity | TODO | controlled tasks + paired perturbation logs |
+| `tab:ablation-plan` | P0 | Ablation plan | run matrix and status for axes | PARTIAL | `ABLATION_COMMANDS.md` and generated configs |
+| `tab:collapse` | P0 | Collapse diagnostics | alive/dead, effective rank, min var, covariance | TODO | HTS-WM diagnostics; current code logs some collapse metrics only if exposed |
+| `tab:compute` | P0 | Compute audit | params, extra params, active dims, FLOPs/update, memory, train hours, inference | PARTIAL | W&B `compute/*`, metadata, future FLOPs/latency extractor |
+| `tab:cross-domain-protocol` | P0 | Suite protocol audit | exact tasks, inputs, steps, repeat, seeds, replay, model size | TODO | after final suite selection |
+| `tab:backbone-reproduction` | P0 | Dreamer anchor reproduction | reference Dreamer, reproduced Dreamer, difference, seeds, GPU, notes | PARTIAL | current Dreamer dev run, future paper-final Dreamer runs |
+| `tab:claim-evidence-registry` | P0 | Claim-to-evidence audit | direct evidence, downstream evidence, controls, stress tests | PARTIAL | this registry |
+| `tab:experiment-suite-matrix` | P0/P1 | Suite coverage by claim | selected tasks and baseline set per suite | TODO | after final suite selection |
+| `tab:dreamer-backbone-audits` | P0/P1 | Backbone audit | learning signal, KL, replay, size, data, horizon, encoder update | PARTIAL | some flags exist; many axes need configs |
+| `tab:dreamerv3-robustness-audit` | P0/P1 | Dreamer robustness audit | KL, free bits, unimix, clipping, gradient pathways | PARTIAL | some config knobs exist; not all variants implemented |
+| `tab:matched-controls` | P0 | Fairness controls | params, active dims, heads, updates, FLOPs/update, replay, train h | PARTIAL | Dreamer/HTS/SGF raw runs; missing matched variants |
+| `tab:scaling-grid` | P1 | Compact scaling grid | data, replay, model size, hierarchy budget, seq len, imagination horizon | TODO | future generated configs |
+| `tab:nearest-method-matrix` | P0/P1 | Claim-surface comparator matrix | comparator status and compatible suites | PARTIAL | baseline docs + this registry |
+| `tab:offline-diagnosis` | P0 | Fixed-buffer representation diagnosis | WM fidelity, reward err, prefix, horizon, boundary, revisit, rank, dead | TODO | offline replay-buffer protocol not implemented |
+| `tab:hyper-transfer` | P0 | Hyperparameter transfer audit | axis sweeps, dev tasks, frozen defaults, failure modes | PARTIAL | current config defaults; tuning record incomplete |
+| `tab:rollout-fidelity` | P0 | Open-loop prediction error | horizons `1,4,8,16,32`, reward error | TODO | future matched rollout extractor |
+| `tab:dmc-task-results` | P1 | DMC task-level results | per-task scores across methods and seeds | TODO | DMC runs not completed |
+| `tab:atari-task-results` | P1 | Atari task-level results | all 26 games across methods and seeds, HNS aggregates | PARTIAL | Breakout dev/external rows only |
+| `tab:planner-audit` | P2 | Optional planning audit | planner FLOPs, latency, return | NOT APPLICABLE YET | no hierarchical planner implemented |
+
+## Figure Registry
+
+| Label | Priority | Required Data | Current Status | Output Artifact |
+|---|---|---|---|---|
+| `fig:overview` | P0 | architecture diagram only | TODO | `figures/overview.*` |
+| `fig:hero-results` | P0 | cross-regime summary, horizon sweep, level-horizon heatmap | TODO | `figures/hero_results.*` |
+| `fig:horizon-sweep` | P0 | controlled dependency horizon sweep | TODO | `figures/horizon_sweep.*` |
+| `fig:rliable-summary` | P1/P0 if Atari central | multi-task scores across seeds | TODO | `figures/rliable_summary.*` |
+| `fig:level-horizon` | P0 | level x horizon prediction errors | TODO | `figures/level_horizon.*` |
+| `fig:prefix-refinement` | P0 | prefix recon/marginal gains | TODO | `figures/prefix_refinement.*` |
+| `fig:spliced-trajectory` | P0 | annotated trajectory with boundaries, revisitation, nuisance | TODO | `figures/spliced_trajectory.*` |
+| `fig:nuisance-event` | P0 if robustness claimed | paired clean/perturbed representation changes | TODO | `figures/nuisance_event.*` |
+| `fig:collapse-dashboard` | P0 if collapse is central | rank, variance, covariance, alive/dead over checkpoints | TODO | `figures/collapse_dashboard.*` |
+| `fig:compute-pareto` | P0 | utility vs GPU h/FLOPs and structure vs active features | TODO | `figures/compute_pareto.*` |
+| `fig:loss-interactions` | P1 | raw/weighted losses, grad norms, cosine similarities | TODO | `figures/loss_interactions.*` |
+| `fig:prefix-rollouts` | P1 | detached diagnostic decoder rollouts | TODO | `figures/prefix_rollouts.*` |
+| `fig:factor-recovery` | P0/P1 controlled | ground-truth factor probes | TODO | `figures/factor_recovery.*` |
+| `fig:backbone-audit` | P1 | backbone ablation curves | TODO | `figures/backbone_audit.*` |
+| `fig:scaling-transfer` | P1 | scaling and fixed-default transfer curves | TODO | `figures/scaling_transfer.*` |
+| `fig:openloop-rollouts` | P1 | matched open-loop predictions | TODO | `figures/openloop_rollouts.*` |
+| `fig:task-level-curves` | P0/P1 | per-task learning curves by suite | TODO | `figures/task_level_curves.*` |
+| `fig:second-backbone` | P1 | second-backbone sanity check | NOT APPLICABLE YET | no second backbone port |
+
+## Master Experiment IDs From Paper
+
+| ID | Priority | Purpose | Current Implementation Status | Result Destination |
+|---|---|---|---|---|
+| `P0-HERO-01` | P0 | freeze default hierarchy and generate hero figure | BLOCKED: final suite choices and paper-final runs missing | `fig:hero-results`, `tab:hero-panel-slots` |
+| `P0-MECH-01` | P0 | synthetic factor recovery: flat, Matryoshka, flat-MH, dense-MH, HTS | MISSING: synthetic benchmark | `fig:factor-recovery`, `tab:claim-evidence-registry` |
+| `P0-MECH-02` | P0 | level-by-horizon heatmap | PARTIAL: HTS losses exist; extractor/table not ready | `tab:level-horizon`, `fig:level-horizon` |
+| `P0-MECH-03` | P0 | prefix reconstruction and conditional probe gain | PARTIAL: recon losses exist; probe/extractor missing | `tab:prefix`, `fig:prefix-refinement` |
+| `P0-MECH-04` | P0 | boundary F1, delay, false-change rate | MISSING: annotated boundary tasks/extractor | `tab:temporal-robustness`, `fig:spliced-trajectory` |
+| `P0-MECH-05` | P0 | revisitation no/hard/soft far negatives | PARTIAL: far-negative flag exists; revisitation task/extractor missing | `tab:temporal-robustness` |
+| `P0-COLL-01` | P0 | no VC, variance-only, covariance-only, smooth-only, global TopK | PARTIAL: config flags exist; result extraction incomplete | `tab:collapse`, `fig:collapse-dashboard` |
+| `P0-MEM-01` | P0 | key-door / inventory memory sweep | MISSING: task scripts not wired | `fig:horizon-sweep`, `tab:main-results` |
+| `P0-ROB-01` | P0 | video background, moving distractor, camera shake, flicker | MISSING: DMC-GB2/distractor scripts not wired | `fig:nuisance-event`, `tab:temporal-robustness` |
+| `P0-BASE-01` | P0 | Dreamer reproduction audit | DEV PARTIAL: Breakout seed 1 only, best-checkpoint/3 eval episodes | `tab:backbone-reproduction` |
+| `P0-BASE-02` | P0 | larger-flat parameter/FLOPs matched controls | MISSING: configs not generated | `tab:matched-controls` |
+| `P0-BASE-03` | P0 | Harmony, DyMo, SGF-flat, flat-SAE, flat-MH, Matryoshka, recon-only | PARTIAL: wrappers/config flags exist for several; not paper-final | `tab:baselines`, `tab:nearest-method-matrix` |
+| `P0-BASE-04` | P0 | T-SAE-style, dense-MH, no-L_temp, no-L_vc | PARTIAL: flags/wrapper exist; runs pending | `tab:ablation-plan`, `tab:collapse` |
+| `P0-OFF-01` | P0 | fixed-buffer diagnosis | MISSING | `tab:offline-diagnosis` |
+| `P0-COMP-01` | P0 | params, active dims, FLOPs/update, memory, wall-clock, latency | PARTIAL: params/runtime/memory partially logged; FLOPs/latency missing | `tab:compute`, `fig:compute-pareto` |
+| `P1-BASE-01` | P1 | THICK and CW-VAE/MTS3 | NOT STARTED | `tab:nearest-method-matrix` |
+| `P1-BASE-02` | P1 | EAWM, TPC, RePo, Denoised MDPs, DreamerPro | PARTIAL: EAWM EADream wrapper/env; others not started | robustness tables/figures |
+| `P1-BASE-03` | P1 | SPARTAN object-centric graph task | NOT STARTED | only if graph claims are made |
+| `P1-DREAM-01` | P1 | Dreamer robustness-technique audit | PARTIAL: some knobs exist | `tab:dreamerv3-robustness-audit`, `fig:backbone-audit` |
+| `P1-SCALE-01` | P1 | data/replay/model/seq/hierarchy scaling | NOT STARTED | `tab:scaling-grid`, `fig:scaling-transfer` |
+| `P1-SUITE-01` | P1 | full DMC Visual and Atari 100K | NOT STARTED except Breakout dev/external rows | `tab:dmc-task-results`, `tab:atari-task-results` |
+| `P1-SUITE-02` | P1 | Crafter/Craftax and DMLab guardrails | NOT STARTED | optional appendix |
+| `P1-ARCH-01` | P1 | second backbone proof of concept | NOT STARTED | `fig:second-backbone` |
+| `P2-PLAN-01` | P2 | hierarchical planner | NOT APPLICABLE YET | `tab:planner-audit` |
+| `P2-ADAPT-01` | P2 | few-shot mechanism-shift adaptation | NOT STARTED | optional extension |
+
+## Current Result Readiness
+
+| Result | Paper-Final? | Why |
+|---|---|---|
+| DreamerV3 Breakout seed 1 `cssk65zq` | No, dev only | used best checkpoint and `test_episode=3`; paper asks final checkpoint and `100` eval episodes for Atari |
+| HTS-WM Breakout seed 1 `i95tp2se` | No, dev only | used best checkpoint and `test_episode=3`; paper asks final checkpoint and `100` eval episodes for Atari |
+| SGF Breakout seed 1 `kcwh4nz5` | Partial official-code external | final eval over `100` episodes, but single seed and native external protocol |
+
+## Required Launcher Updates Before Paper-Final Same-Code Runs
+
+| Need | Current State | Required Change |
+|---|---|---|
+| Atari final eval episodes | `test_episode: 3` in local DreamerV3 and HTS-WM YAML configs; not exposed by current bash wrappers | expose `TEST_EPISODE=100` or add paper-final YAML configs |
+| Checkpoint rule | benchmark launcher saves and reports best checkpoint | add a paper-final mode that trains full budget and reports final checkpoint, or clearly separate best-checkpoint dev runs from final-checkpoint paper runs |
+| Final evaluation artifact | W&B summary stores last eval, terminal stores best checkpoint | store final eval mean/std, per-episode scores, and checkpoint rule explicitly in W&B/local JSON |
+| Paper seed set | current completed local runs are only seed `1` | define and run paper seeds, likely `0..4` or explicit user-provided list |
+| HNS / rliable aggregates | raw Atari rewards only | add post-processing for HNS, IQM, optimality gap, probability of improvement, bootstrap CI |
+| FLOPs / latency | params/runtime partially logged; FLOPs and inference latency missing | add or document a compute extractor before filling `tab:compute` and `fig:compute-pareto` |
+
+## Open Decisions Needed
+
+- Should `SGF` get its own column in `tab:atari-task-results` and appendix
+  task-level tables? The current paper table columns omit SGF despite including
+  SGF in the baseline taxonomy.
+- For same-code Atari paper-final reruns, should we change local launchers to
+  final-checkpoint-only and `test_episode=100`, or keep best-checkpoint dev
+  runs separate and add a new paper-final script?
+- Which exact suites are frozen for `fig:hero-results` panel (a): DMC Visual
+  subset/full, Atari subset/full, DMC-GB2, memory tasks, or all of them?
+- Which controlled memory task implementation should be prioritized first:
+  synthetic multi-timescale, Multiworld-Door, MiniHack KeyCorridor, or VisualPinPad?

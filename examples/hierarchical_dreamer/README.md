@@ -69,3 +69,14 @@ Paper ablation command templates:
 ```bash
 less examples/hierarchical_dreamer/ABLATION_COMMANDS.md
 ```
+
+Paper experiment registry and result tracker:
+
+```bash
+less examples/hierarchical_dreamer/PAPER_EXPERIMENT_REGISTRY.md
+less examples/hierarchical_dreamer/RESULTS_TRACKER.md
+```
+
+The registry follows the updated `paper.txt` table and figure labels. The
+tracker stores completed raw runs and marks whether each result is paper-final,
+development-only, or official-code external.

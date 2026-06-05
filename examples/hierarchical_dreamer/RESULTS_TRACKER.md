@@ -3,13 +3,29 @@
 This file tracks completed runs for the paper tables. Add one row per completed
 run, then aggregate across seeds when enough runs are available.
 
+For the full paper table/figure mapping, see
+`examples/hierarchical_dreamer/PAPER_EXPERIMENT_REGISTRY.md`.
+
+## Paper-Final Readiness
+
+The updated `paper.txt` requires final-checkpoint reporting for same-code
+Dreamer variants and `100` Atari evaluation episodes. Current local XuanCe
+Breakout runs used best-checkpoint reporting with `test_episode=3`, so they are
+development-complete but not paper-final.
+
+| Method | Game | Seed | Raw Run Status | Paper-Final Status | Reason |
+|---|---|---:|---|---|---|
+| DreamerV3 | Breakout | 1 | DEV_DONE | NOT PAPER-FINAL | best checkpoint, `3` eval episodes |
+| HTS-WM | Breakout | 1 | DEV_DONE | NOT PAPER-FINAL | best checkpoint, `3` eval episodes |
+| SGF | Breakout | 1 | DONE | PARTIAL EXTERNAL | official-code external, final eval `100` episodes, single seed only |
+
 ## Atari100K Breakout Baselines
 
 | Status | Method | Code Path | Game | Seed | Device | Budget | Eval Episodes | Score Mean | Score Std | Min | Max | Runtime | W&B Run | Local Summary | Notes |
 |---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
-| DONE | SGF | official external repo | Breakout | 1 | cuda:1 | 100000 env steps | 100 | 41.53 | 45.06 | 14 | 349 | 5.54 h | `kcwh4nz5` | `external_baselines/sgf/wandb/run-20260604_152108-kcwh4nz5/files/wandb-summary.json` | Single seed. W&B display name was random (`fearless-disco-5`) because upstream SGF did not set `wandb.init(name=...)`; wrapper fixed for future runs. |
-| DONE | DreamerV3 | local XuanCe | Breakout | 1 | cuda:0 | 100000 agent/env steps | 3 | 15.67 | 2.05 | TBD | TBD | 15.24 h | `cssk65zq` | `logs/Breakout-v5/wandb/run-20260604_221354-cssk65zq/files/wandb-summary.json` | Anchor baseline. Script-reported best checkpoint score was `15.67 +- 2.05`; final W&B summary for the last eval was `11.67 +- 2.05`. |
-| DONE | HTS-WM | local XuanCe | Breakout | 1 | cuda:0 | 100000 agent/env steps | 3 | 15.33 | 1.70 | TBD | TBD | 7.80 h | `i95tp2se` | `logs/hierarchical-dreamer/ablations/HTS-WM-full-breakout-seed1-100k/Breakout-v5/wandb/run-20260604_004917-i95tp2se/files/wandb-summary.json` | Two-phase default. Script-reported best checkpoint score was `15.33 +- 1.70`; final W&B summary for the last eval was `6.33 +- 3.30`. |
+| DONE | SGF | official external repo | Breakout | 1 | cuda:1 | 100000 env steps | 100 | 41.53 | 45.06 | 14 | 349 | 5.54 h | `kcwh4nz5` | `external_baselines/sgf/wandb/run-20260604_152108-kcwh4nz5/files/wandb-summary.json` | Single seed official-code external. W&B display name was random (`fearless-disco-5`) because upstream SGF did not set `wandb.init(name=...)`; wrapper fixed for future runs. |
+| DEV_DONE | DreamerV3 | local XuanCe | Breakout | 1 | cuda:0 | 100000 agent/env steps | 3 | 15.67 | 2.05 | TBD | TBD | 15.24 h | `cssk65zq` | `logs/Breakout-v5/wandb/run-20260604_221354-cssk65zq/files/wandb-summary.json` | Anchor baseline dev result. Script-reported best checkpoint score was `15.67 +- 2.05`; final W&B summary for the last eval was `11.67 +- 2.05`. Not paper-final. |
+| DEV_DONE | HTS-WM | local XuanCe | Breakout | 1 | cuda:0 | 100000 agent/env steps | 3 | 15.33 | 1.70 | TBD | TBD | 7.80 h | `i95tp2se` | `logs/hierarchical-dreamer/ablations/HTS-WM-full-breakout-seed1-100k/Breakout-v5/wandb/run-20260604_004917-i95tp2se/files/wandb-summary.json` | Two-phase default dev result. Script-reported best checkpoint score was `15.33 +- 1.70`; final W&B summary for the last eval was `6.33 +- 3.30`. Not paper-final. |
 | TODO | T-SAE-style | local XuanCe | Breakout | 1 | TBD | 100000 agent/env steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | Temporal sparse SAE-style control. |
 | TODO | XuanCe HarmonyDream | local XuanCe | Breakout | 1 | TBD | 100000 agent/env steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | Same-code HarmonyDream approximation. |
 | TODO | DyMoDreamer | official external repo | Breakout | 0 | TBD | 400000 raw frames | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | Official-code wrapper. |
@@ -118,5 +134,18 @@ Fill this section only after multiple seeds are available.
 | Method | Game | Seeds | Mean Score | Std Across Seeds | Eval Episodes Per Seed | Notes |
 |---|---|---|---:|---:|---:|---|
 | SGF | Breakout | `1` | 41.53 | TBD | 100 | Single seed only; do not report as multi-seed aggregate yet. |
-| DreamerV3 | Breakout | `1` | 15.67 | TBD | 3 | Single seed only. Row uses best-checkpoint benchmark score, not the last W&B summary eval. |
-| HTS-WM | Breakout | `1` | 15.33 | TBD | 3 | Single seed only. Row uses best-checkpoint benchmark score, not the last W&B summary eval. |
+| DreamerV3 | Breakout | `1` | 15.67 | TBD | 3 | Development only. Row uses best-checkpoint benchmark score, not the final-checkpoint paper protocol. |
+| HTS-WM | Breakout | `1` | 15.33 | TBD | 3 | Development only. Row uses best-checkpoint benchmark score, not the final-checkpoint paper protocol. |
+
+## Paper Table Fill Queue
+
+| Paper Table | Current Fill Status | Next Required Run Or Artifact |
+|---|---|---|
+| `tab:backbone-reproduction` | PARTIAL | DreamerV3 paper-final Breakout and selected-suite runs with final checkpoint, `100` eval episodes, paper seed set |
+| `tab:atari-task-results` | PARTIAL | all selected Atari games and methods; current Breakout rows are dev/external only |
+| `tab:main-results` | TODO | paper-final aggregates for Memory, Motion, Distractor, DMC, Atari, GPU h |
+| `tab:compute` | PARTIAL | rerun DreamerV3 after param logging; collect HTS-WM params, memory, train h; add FLOPs/update and inference latency |
+| `tab:matched-controls` | PARTIAL | larger flat, flat partition, flat multi-horizon, dense multi-stride, static sparse hierarchy, HTS-WM under matched budget |
+| `tab:prefix` | TODO | prefix reconstruction extractor over held-out latents |
+| `tab:level-horizon` | TODO | level-by-horizon latent prediction extractor for horizons `1,2,4,8,16,32` |
+| `tab:collapse` | TODO | collapse dashboard metrics by level/checkpoint |

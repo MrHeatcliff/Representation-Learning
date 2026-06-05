@@ -5,16 +5,22 @@ commands, no placeholders and no standalone config flags.
 
 Completed Breakout seed 1 results are tracked in
 `examples/hierarchical_dreamer/RESULTS_TRACKER.md`.
+The full paper table/figure mapping is in
+`examples/hierarchical_dreamer/PAPER_EXPERIMENT_REGISTRY.md`.
+
+Paper-final Atari same-code runs must use the final checkpoint and `100` eval
+episodes. The completed local DreamerV3 and HTS-WM rows below are development
+results because they used best-checkpoint selection and `3` eval episodes.
 
 ## Completed Runs
 
-| Method | Game | Seed | Score Used In Tracker | W&B Run | Notes |
-|---|---|---:|---:|---|---|
-| DreamerV3 | Breakout | 1 | `15.67 +- 2.05` | `cssk65zq` | Best checkpoint over 3 eval episodes. |
-| HTS-WM | Breakout | 1 | `15.33 +- 1.70` | `i95tp2se` | Best checkpoint over 3 eval episodes. |
-| SGF | Breakout | 1 | `41.53 +- 45.06` | `kcwh4nz5` | Final eval over 100 episodes. |
+| Method | Game | Seed | Score Used In Tracker | W&B Run | Paper Status | Notes |
+|---|---|---:|---:|---|---|---|
+| DreamerV3 | Breakout | 1 | `15.67 +- 2.05` | `cssk65zq` | DEV_DONE | Best checkpoint over 3 eval episodes. |
+| HTS-WM | Breakout | 1 | `15.33 +- 1.70` | `i95tp2se` | DEV_DONE | Best checkpoint over 3 eval episodes. |
+| SGF | Breakout | 1 | `41.53 +- 45.06` | `kcwh4nz5` | PARTIAL EXTERNAL | Official-code final eval over 100 episodes, single seed. |
 
-## DreamerV3 Anchor (DONE: Breakout seed 1 on 2026-06-05)
+## DreamerV3 Anchor (DEV_DONE: Breakout seed 1 on 2026-06-05)
 
 Completed result summary:
 - Best checkpoint score: `15.67 +- 2.05` over `3` eval episodes
@@ -43,7 +49,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
   --benchmark 1
 ```
 
-## Full HTS-WM (DONE: Breakout seed 1 on 2026-06-04)
+## Full HTS-WM (DEV_DONE: Breakout seed 1 on 2026-06-04)
 
 Completed result summary:
 - Best checkpoint score: `15.33 +- 1.70` over `3` eval episodes
@@ -166,7 +172,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
-## SGF Full Atari100K (DONE: Breakout seed 1 on 2026-06-04)
+## SGF Full Atari100K (PARTIAL EXTERNAL: Breakout seed 1 on 2026-06-04)
 
 Completed result summary:
 - Final eval score: `41.53 +- 45.06` over `100` eval episodes
