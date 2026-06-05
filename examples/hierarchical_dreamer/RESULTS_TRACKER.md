@@ -8,7 +8,7 @@ run, then aggregate across seeds when enough runs are available.
 | Status | Method | Code Path | Game | Seed | Device | Budget | Eval Episodes | Score Mean | Score Std | Min | Max | Runtime | W&B Run | Local Summary | Notes |
 |---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
 | DONE | SGF | official external repo | Breakout | 1 | cuda:1 | 100000 env steps | 100 | 41.53 | 45.06 | 14 | 349 | 5.54 h | `kcwh4nz5` | `external_baselines/sgf/wandb/run-20260604_152108-kcwh4nz5/files/wandb-summary.json` | Single seed. W&B display name was random (`fearless-disco-5`) because upstream SGF did not set `wandb.init(name=...)`; wrapper fixed for future runs. |
-| TODO | DreamerV3 | local XuanCe | Breakout | 1 | TBD | 100000 agent/env steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | Anchor baseline. |
+| DONE | DreamerV3 | local XuanCe | Breakout | 1 | cuda:0 | 100000 agent/env steps | 3 | 15.67 | 2.05 | TBD | TBD | 15.24 h | `cssk65zq` | `logs/Breakout-v5/wandb/run-20260604_221354-cssk65zq/files/wandb-summary.json` | Anchor baseline. Script-reported best checkpoint score was `15.67 +- 2.05`; final W&B summary for the last eval was `11.67 +- 2.05`. |
 | DONE | HTS-WM | local XuanCe | Breakout | 1 | cuda:0 | 100000 agent/env steps | 3 | 15.33 | 1.70 | TBD | TBD | 7.80 h | `i95tp2se` | `logs/hierarchical-dreamer/ablations/HTS-WM-full-breakout-seed1-100k/Breakout-v5/wandb/run-20260604_004917-i95tp2se/files/wandb-summary.json` | Two-phase default. Script-reported best checkpoint score was `15.33 +- 1.70`; final W&B summary for the last eval was `6.33 +- 3.30`. |
 | TODO | T-SAE-style | local XuanCe | Breakout | 1 | TBD | 100000 agent/env steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | Temporal sparse SAE-style control. |
 | TODO | XuanCe HarmonyDream | local XuanCe | Breakout | 1 | TBD | 100000 agent/env steps | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | Same-code HarmonyDream approximation. |
@@ -41,6 +41,39 @@ Important interpretation note: `stats/buffer_max_episode_reward=42` is not
 directly comparable to `eval/episode_reward_max=349`, because the train env uses
 episodic life and a shorter frame cap while the eval env uses full episodes.
 Use `eval/episode_reward` for result tables.
+
+## DreamerV3 Run Detail: Breakout Seed 1
+
+- Command run name: `DreamerV3-baseline-breakout-seed1-100k`
+- W&B run id: `cssk65zq`
+- W&B display name: `DreamerV3-baseline-breakout-seed1-100k`
+- W&B project:
+  `https://wandb.ai/ttdat170703-ho-chi-minh-city-university-of-technology/HTS-WM-Baselines`
+- W&B run:
+  `https://wandb.ai/ttdat170703-ho-chi-minh-city-university-of-technology/HTS-WM-Baselines/runs/cssk65zq`
+- Local W&B folder:
+  `logs/Breakout-v5/wandb/run-20260604_221354-cssk65zq`
+- Config file:
+  `logs/Breakout-v5/wandb/run-20260604_221354-cssk65zq/files/config.yaml`
+- Runtime: `_runtime=54862.96s` (`15.24 h`)
+- Device: `cuda:0`
+- GPU from W&B metadata: `NVIDIA GeForce RTX 3090`
+- Budget / protocol:
+  `running_steps=100000`, `eval_interval=2000`, `replay_ratio=1`,
+  `buffer_size=1000000`, `batch_size=16`, `seq_len=64`, `benchmark=1`
+- Eval protocol: `test_episode=3`
+- Last W&B summary eval: `Test-Episode-Rewards/Mean-Score=11.66667`,
+  `Std-Score=2.05480`
+- Script-reported best checkpoint: `Best Model Score: 15.67, std=2.05`
+- Final gradient step in summary: `step/gradient_step=98976`
+- Final world-model losses:
+  `model_loss/model_loss=0.90252`, `model_loss/kl_loss=0.84417`,
+  `model_loss/obs_loss=0.04631`, `model_loss/rew_loss=0.01203`
+
+Important interpretation note: this launcher saves the best checkpoint across
+benchmark evals, so the terminal line `Best Model Score: 15.67, std=2.05` is
+the best observed eval checkpoint, while the W&B run summary reflects the last
+logged eval at the end of training.
 
 ## HTS-WM Run Detail: Breakout Seed 1
 
@@ -85,4 +118,5 @@ Fill this section only after multiple seeds are available.
 | Method | Game | Seeds | Mean Score | Std Across Seeds | Eval Episodes Per Seed | Notes |
 |---|---|---|---:|---:|---:|---|
 | SGF | Breakout | `1` | 41.53 | TBD | 100 | Single seed only; do not report as multi-seed aggregate yet. |
+| DreamerV3 | Breakout | `1` | 15.67 | TBD | 3 | Single seed only. Row uses best-checkpoint benchmark score, not the last W&B summary eval. |
 | HTS-WM | Breakout | `1` | 15.33 | TBD | 3 | Single seed only. Row uses best-checkpoint benchmark score, not the last W&B summary eval. |

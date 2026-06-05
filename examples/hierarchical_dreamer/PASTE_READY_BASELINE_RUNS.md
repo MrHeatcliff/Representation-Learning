@@ -3,7 +3,27 @@
 Run one block at a time. This file intentionally contains only concrete shell
 commands, no placeholders and no standalone config flags.
 
-## DreamerV3 Anchor
+Completed Breakout seed 1 results are tracked in
+`examples/hierarchical_dreamer/RESULTS_TRACKER.md`.
+
+## Completed Runs
+
+| Method | Game | Seed | Score Used In Tracker | W&B Run | Notes |
+|---|---|---:|---:|---|---|
+| DreamerV3 | Breakout | 1 | `15.67 +- 2.05` | `cssk65zq` | Best checkpoint over 3 eval episodes. |
+| HTS-WM | Breakout | 1 | `15.33 +- 1.70` | `i95tp2se` | Best checkpoint over 3 eval episodes. |
+| SGF | Breakout | 1 | `41.53 +- 45.06` | `kcwh4nz5` | Final eval over 100 episodes. |
+
+## DreamerV3 Anchor (DONE: Breakout seed 1 on 2026-06-05)
+
+Completed result summary:
+- Best checkpoint score: `15.67 +- 2.05` over `3` eval episodes
+- Last W&B summary score: `11.67 +- 2.05`
+- W&B run: `cssk65zq`
+- W&B URL:
+  `https://wandb.ai/ttdat170703-ho-chi-minh-city-university-of-technology/HTS-WM-Baselines/runs/cssk65zq`
+- Local summary:
+  `logs/Breakout-v5/wandb/run-20260604_221354-cssk65zq/files/wandb-summary.json`
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -146,7 +166,14 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
-## SGF Full Atari100K
+## SGF Full Atari100K (DONE: Breakout seed 1 on 2026-06-04)
+
+Completed result summary:
+- Final eval score: `41.53 +- 45.06` over `100` eval episodes
+- W&B run: `kcwh4nz5`
+- W&B display name in completed run: `fearless-disco-5`
+- Local summary:
+  `external_baselines/sgf/wandb/run-20260604_152108-kcwh4nz5/files/wandb-summary.json`
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance

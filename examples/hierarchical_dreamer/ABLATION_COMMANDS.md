@@ -21,9 +21,18 @@ Run one block at a time. These blocks are complete commands with no placeholders
 Smoke runs are short dependency checks; full runs are the commands to fill the
 current Atari100K Breakout rows.
 
+Completed Breakout seed 1 runs are tracked in
+`examples/hierarchical_dreamer/RESULTS_TRACKER.md`.
+
+| Method | Status | Score Used In Tracker | W&B Run | Notes |
+|---|---|---:|---|---|
+| DreamerV3 | DONE | `15.67 +- 2.05` | `cssk65zq` | Best checkpoint over 3 eval episodes. |
+| HTS-WM | DONE | `15.33 +- 1.70` | `i95tp2se` | Best checkpoint over 3 eval episodes. |
+| SGF | DONE | `41.53 +- 45.06` | `kcwh4nz5` | Final eval over 100 episodes. |
+
 ### Local XuanCe Runs
 
-DreamerV3 anchor:
+DreamerV3 anchor (DONE: Breakout seed 1, W&B `cssk65zq`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -43,7 +52,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
   --benchmark 1
 ```
 
-Full HTS-WM / Hierarchical Dreamer:
+Full HTS-WM / Hierarchical Dreamer (DONE: Breakout seed 1, W&B `i95tp2se`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -116,7 +125,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
 ```
 
-Full Atari100K:
+Full Atari100K (NOT DONE):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -162,7 +171,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
-Full Atari100K:
+Full Atari100K (DONE: Breakout seed 1, W&B `kcwh4nz5`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -348,7 +357,7 @@ export RUNNING_STEPS=100000
 export REPLAY_RATIO=1
 ```
 
-Run DreamerV3 anchor:
+Run DreamerV3 anchor (DONE: Breakout seed 1, W&B `cssk65zq`):
 
 ```bash
 "$PYTHON_BIN" examples/dreamer_v3/dreamer_v3_atari.py \
@@ -365,7 +374,7 @@ Run DreamerV3 anchor:
   --benchmark 1
 ```
 
-Run full HTS-WM:
+Run full HTS-WM (DONE: Breakout seed 1, W&B `i95tp2se`):
 
 ```bash
 CONFIG_FILE=config/atari100k_two_phase.yaml \
@@ -430,7 +439,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_dymodreamer_atari100k.sh
 ```
 
-DyMoDreamer full Atari100K:
+DyMoDreamer full Atari100K (NOT DONE):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
@@ -475,7 +484,7 @@ PYTHON_BIN=/home/dat.tt2/miniconda3/envs/harmonydream/bin/python \
 examples/hierarchical_dreamer/baselines/run_sgf_atari100k.sh
 ```
 
-SGF full Atari100K:
+SGF full Atari100K (DONE: Breakout seed 1, W&B `kcwh4nz5`):
 
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance

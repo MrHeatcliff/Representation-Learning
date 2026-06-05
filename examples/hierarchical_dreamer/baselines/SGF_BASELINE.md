@@ -12,16 +12,22 @@ than a guessed reimplementation inside XuanCe.
 
 ## Current Assessment
 
-Runnable path: `PARTIAL`.
+Runnable path: `DONE` for Atari100K Breakout seed 1.
 
 SGF is a compact official PyTorch Atari codebase with W&B logging and a default
-Atari100K config. It is a better candidate for running directly than porting.
-The only blocker in the current shared `harmonydream` environment is missing
-dependencies:
+Atari100K config. It is run directly as an external-code baseline rather than
+ported into XuanCe.
 
-- `wandb`
-- `torchvision`
-- `ale_py`
+Completed Breakout seed 1 result:
+
+- Final eval score: `41.53 +- 45.06`
+- Final eval episodes: `100`
+- W&B run id: `kcwh4nz5`
+- Local summary:
+  `external_baselines/sgf/wandb/run-20260604_152108-kcwh4nz5/files/wandb-summary.json`
+
+The wrapper has also been updated so future SGF runs use `RUN_NAME` as the W&B
+display name via `WANDB_NAME`.
 
 ## Atari100K Config Found Upstream
 

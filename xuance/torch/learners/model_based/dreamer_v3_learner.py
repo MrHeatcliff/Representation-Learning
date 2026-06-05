@@ -47,6 +47,43 @@ class DreamerV3_Learner(Learner):
         }
 
         self.gradient_step = 0
+        self._compute_static_model_stats()
+
+    @staticmethod
+    def _count_params(parameters):
+        params = list(parameters)
+        total = sum(param.numel() for param in params)
+        trainable = sum(param.numel() for param in params if param.requires_grad)
+        return total, trainable
+
+    def _compute_static_model_stats(self):
+        world_model_total, world_model_trainable = self._count_params(self.policy.world_model.parameters())
+        actor_total, actor_trainable = self._count_params(self.policy.actor.parameters())
+        critic_total, critic_trainable = self._count_params(self.policy.critic.parameters())
+
+        harmonizer_params = []
+        if self.config.harmony:
+            harmonizer_params = [
+                self.policy.harmonizer_s1.get_harmony(),
+                self.policy.harmonizer_s2.get_harmony(),
+                self.policy.harmonizer_s3.get_harmony(),
+            ]
+        harmonizer_total, harmonizer_trainable = self._count_params(harmonizer_params)
+
+        total = world_model_total + harmonizer_total + actor_total + critic_total
+        trainable = world_model_trainable + harmonizer_trainable + actor_trainable + critic_trainable
+        self._static_model_stats = {
+            "compute/params_world_model": float(world_model_total),
+            "compute/params_world_model_trainable": float(world_model_trainable),
+            "compute/params_harmonizer": float(harmonizer_total),
+            "compute/params_harmonizer_trainable": float(harmonizer_trainable),
+            "compute/params_actor": float(actor_total),
+            "compute/params_actor_trainable": float(actor_trainable),
+            "compute/params_critic": float(critic_total),
+            "compute/params_critic_trainable": float(critic_trainable),
+            "compute/params_total": float(total),
+            "compute/params_total_trainable": float(trainable),
+        }
 
     def update(self, **samples):
         if self.gradient_step % self.soft_update_freq == 0:
@@ -145,6 +182,8 @@ class DreamerV3_Learner(Learner):
         #     print(f'gradient_step: {self.gradient_step}')
 
         info.update({
+            **self._static_model_stats,
+
             "model_loss/model_loss": model_loss.item(),
             "model_loss/obs_loss": observation_loss.mean().item(),
             "model_loss/rew_loss": reward_loss.mean().item(),
