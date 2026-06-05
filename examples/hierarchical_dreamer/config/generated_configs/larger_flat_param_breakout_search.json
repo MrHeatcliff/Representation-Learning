@@ -1,0 +1,73 @@
+{
+  "selected_width": 632,
+  "target_tolerance": 0.02,
+  "matched_within_tolerance": true,
+  "selected": {
+    "candidate_width": 632,
+    "addon_params": 6081840,
+    "target_hts_addon_params": 6105728,
+    "relative_param_gap": 0.003912391773757363
+  },
+  "top_10_candidates": [
+    {
+      "candidate_width": 632,
+      "addon_params": 6081840,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.003912391773757363
+    },
+    {
+      "candidate_width": 640,
+      "addon_params": 6194624,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.014559443198255802
+    },
+    {
+      "candidate_width": 624,
+      "addon_params": 5969952,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.022237479298127923
+    },
+    {
+      "candidate_width": 648,
+      "addon_params": 6308304,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.033178025617911576
+    },
+    {
+      "candidate_width": 616,
+      "addon_params": 5858960,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.040415819374855874
+    },
+    {
+      "candidate_width": 656,
+      "addon_params": 6422880,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.05194335548520995
+    },
+    {
+      "candidate_width": 608,
+      "addon_params": 5748864,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.05844741200394122
+    },
+    {
+      "candidate_width": 664,
+      "addon_params": 6538352,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.07085543280015094
+    },
+    {
+      "candidate_width": 600,
+      "addon_params": 5639664,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.07633225718538396
+    },
+    {
+      "candidate_width": 672,
+      "addon_params": 6654720,
+      "target_hts_addon_params": 6105728,
+      "relative_param_gap": 0.08991425756273454
+    }
+  ]
+}

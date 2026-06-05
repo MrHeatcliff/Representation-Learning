@@ -30,6 +30,37 @@ The updated paper requires final-checkpoint same-code Atari results with `100`
 eval episodes. Current DreamerV3 and HTS-WM runs are development-complete but
 not paper-final.
 
+## Synthetic Multi-Timescale Fixed Buffer
+
+`READY` for dataset generation. The fixed-buffer evaluator is still missing.
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+.venv/bin/python examples/hierarchical_dreamer/synthetic_multiscale/generate_dataset.py \
+  --output data/synthetic_multiscale_state \
+  --train-trajectories 10000 \
+  --val-trajectories 2000 \
+  --test-trajectories 2000 \
+  --length 128 \
+  --noise-std 0.01 \
+  --seed 0
+```
+
+Required Synthetic metrics after evaluator implementation:
+
+| Metric | Status |
+|---|---|
+| level x horizon normalized prediction error | TODO |
+| predictive quality per active feature | TODO |
+| prefix reconstruction error and marginal prefix gain | TODO |
+| factor probes | TODO |
+| boundary F1 and delay | TODO |
+| false-change rate | TODO |
+| revisit similarity | TODO |
+| effective rank and dead-feature ratio | TODO |
+| nuisance sensitivity | TODO |
+
 | Method | Status | Score Used In Tracker | W&B Run | Notes |
 |---|---|---:|---|---|
 | DreamerV3 | DEV_DONE | `15.67 +- 2.05` | `cssk65zq` | Best checkpoint over 3 eval episodes; not paper-final. |
@@ -620,8 +651,9 @@ examples/hierarchical_dreamer/train_ablation.sh
 
 ### Static Recon-Only Hierarchy
 
-`READY`: same as Matryoshka-only but keeps optional VC/sparsity as architecture
-diagnostics.
+`READY BY FLAGS`: dense/unconstrained multi-head prefix reconstruction only. It
+uses the HTS shared trunk, heads, prefix decoders, and stop-gradient routing, but
+turns off TopK/L1, sparse dynamics, temporal loss, and VC.
 
 ```bash
 .venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
@@ -659,44 +691,80 @@ diagnostics.
 
 ### Flat Single-Level SAE
 
-`READY` as a sparsity-only approximation with `L=1`.
+`READY`: true flat SAE control with one flat TopK code, `topk=48`, dictionary
+width equal to the total HTS code width, and one decoder.
 
 ```bash
-.venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-  --base "$BASE" \
-  --output "$OUT/flat_single_level_sae.yaml" \
-  --set hierarchical_latent.ablation_name=flat_single_level_sae \
-  --set hierarchical_latent.num_heads=1 \
-  --set hierarchical_latent.sparsity_topk='[48]' \
-  --set hierarchical_latent.reconstruction.betas='[1.0]' \
-  --set hierarchical_latent.sparse_dynamics.strides='[1]' \
-  --set hierarchical_latent.sparse_dynamics.alphas='[1.0]' \
-  --set hierarchical_latent.loss_weights.sparse_dynamics=0.0 \
-  --set hierarchical_latent.loss_weights.temporal=0.0 \
-  --set hierarchical_latent.loss_weights.variance_covariance=0.0
+CONFIG_FILE=config/generated_configs/flat_sae.yaml \
+RUN_NAME=flat-sae-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
 ```
 
 ### Flat Multi-Horizon Control
 
-`PARTIAL`: current approximation is `L=1` plus dynamics. A true flat
-multi-horizon baseline with multiple horizon heads but no nested hierarchy is
-not implemented yet.
+`READY`: true flat multi-horizon with one flat latent and six independent
+predictors for horizons `[1, 2, 4, 8, 16, 32]`. It has no hierarchy, no prefix
+decoder, no TopK/L1, no temporal contrastive loss, and no VC.
 
 ```bash
-.venv/bin/python examples/hierarchical_dreamer/make_ablation_config.py \
-  --base "$BASE" \
-  --output "$OUT/flat_single_level_dynamics.yaml" \
-  --set hierarchical_latent.ablation_name=flat_single_level_dynamics \
-  --set hierarchical_latent.num_heads=1 \
-  --set hierarchical_latent.sparsity_topk='[48]' \
-  --set hierarchical_latent.reconstruction.betas='[1.0]' \
-  --set hierarchical_latent.sparse_dynamics.strides='[1]' \
-  --set hierarchical_latent.sparse_dynamics.alphas='[1.0]'
+CONFIG_FILE=config/generated_configs/flat_mh.yaml \
+RUN_NAME=flat-mh-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
 ```
+
+### SGF-Style Flat Same-Code
+
+`READY`: dense projector, one-step action-conditioned predictor,
+stop-gradient target, and VICReg. This is not a faithful official SGF
+reproduction.
+
+```bash
+CONFIG_FILE=config/generated_configs/sgf_style_flat_same_code.yaml \
+RUN_NAME=sgf-style-flat-same-code-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+### Larger Flat Parameter-Matched
+
+`READY FOR BREAKOUT`: search script generated
+`config/generated_configs/larger_flat_param_breakout.yaml` with width `632`,
+matching the analytic HTS add-on parameter count within `0.39%` for
+`actions_dim=4`.
+
+Regenerate per game if the action-space size differs.
 
 ### Dense Multi-Stride
 
-`READY`: disables sparsity while keeping multiple levels and strides.
+`READY BY FLAGS`: disables sparsity while keeping multiple levels, prefixes,
+and strides. This matches the locked dense multi-stride definition as long as it
+is not flattened into one concatenated head.
 
 ```bash
 --set hierarchical_latent.ablation_name=dense_multi_stride \

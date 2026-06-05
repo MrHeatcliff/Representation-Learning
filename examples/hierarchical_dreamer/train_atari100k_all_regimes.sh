@@ -10,6 +10,7 @@ ROM_NAME="${ENV_ID##*/}"
 DEVICE="${DEVICE:-cuda:1}"
 WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-Hierarchical-Dreamer-Atari100K}"
+SEED="${SEED:-1}"
 
 RUNNING_STEPS="${RUNNING_STEPS:-100000}"
 EVAL_INTERVAL="${EVAL_INTERVAL:-2000}"
@@ -20,6 +21,8 @@ BATCH_SIZE="${BATCH_SIZE:-16}"
 SEQ_LEN="${SEQ_LEN:-64}"
 PARALLELS="${PARALLELS:-1}"
 BENCHMARK="${BENCHMARK:-1}"
+TEST_EPISODE="${TEST_EPISODE:-3}"
+CHECKPOINT_RULE="${CHECKPOINT_RULE:-best}"
 
 RUN_GROUP="${RUN_GROUP:-atari100k_$(date +%Y%m%d_%H%M%S)}"
 RUN_LOG_ROOT="${RUN_LOG_ROOT:-${REPO_ROOT}/logs/training_scripts/${RUN_GROUP}}"
@@ -29,7 +32,7 @@ run_hierarchical_regime() {
   local regime="$1"
   local config_file="$2"
   local log_file="${RUN_LOG_ROOT}/${regime}.log"
-  local wandb_run_name="HDreamer-${regime}-${ROM_NAME}-seed1-${RUNNING_STEPS}steps-${RUN_GROUP}"
+  local wandb_run_name="HDreamer-${regime}-${ROM_NAME}-seed${SEED}-${RUNNING_STEPS}steps-${RUN_GROUP}"
 
   mkdir -p \
     "${REPO_ROOT}/logs/hierarchical-dreamer/atari100k/${regime}/${ROM_NAME}" \
@@ -42,6 +45,7 @@ run_hierarchical_regime() {
       --config-file "${config_file}" \
       --env-id "${ENV_ID}" \
       --device "${DEVICE}" \
+      --seed "${SEED}" \
       --logger wandb \
       --project-name "${PROJECT_NAME}" \
       --wandb-mode "${WANDB_MODE}" \
@@ -55,6 +59,8 @@ run_hierarchical_regime() {
       --seq-len "${SEQ_LEN}" \
       --parallels "${PARALLELS}" \
       --benchmark "${BENCHMARK}" \
+      --test-episode "${TEST_EPISODE}" \
+      --checkpoint-rule "${CHECKPOINT_RULE}" \
       --log-dir "logs/hierarchical-dreamer/atari100k/${regime}/${ROM_NAME}/" \
       --model-dir "models/hierarchical-dreamer/atari100k/${regime}/${ROM_NAME}/"
   ) 2>&1 | tee -a "${log_file}"
@@ -64,7 +70,7 @@ run_hierarchical_regime() {
 run_dreamer_baseline() {
   local regime="dreamer_baseline"
   local log_file="${RUN_LOG_ROOT}/${regime}.log"
-  local wandb_run_name="DreamerV3-baseline-${ROM_NAME}-seed1-${RUNNING_STEPS}steps-${RUN_GROUP}"
+  local wandb_run_name="DreamerV3-baseline-${ROM_NAME}-seed${SEED}-${RUNNING_STEPS}steps-${RUN_GROUP}"
 
   mkdir -p \
     "${REPO_ROOT}/logs/dreamer-v3/atari100k/${regime}/${ROM_NAME}" \
@@ -76,6 +82,7 @@ run_dreamer_baseline() {
     "${PYTHON_BIN}" examples/dreamer_v3/dreamer_v3_atari.py \
       --env-id "${ENV_ID}" \
       --device "${DEVICE}" \
+      --seed "${SEED}" \
       --logger wandb \
       --project-name "${PROJECT_NAME}" \
       --wandb-mode "${WANDB_MODE}" \
@@ -89,6 +96,8 @@ run_dreamer_baseline() {
       --seq-len "${SEQ_LEN}" \
       --parallels "${PARALLELS}" \
       --benchmark "${BENCHMARK}" \
+      --test-episode "${TEST_EPISODE}" \
+      --checkpoint-rule "${CHECKPOINT_RULE}" \
       --log-dir "logs/dreamer-v3/atari100k/${regime}/${ROM_NAME}/" \
       --model-dir "models/dreamer-v3/atari100k/${regime}/${ROM_NAME}/"
   ) 2>&1 | tee -a "${log_file}"
@@ -99,7 +108,10 @@ echo "Run group: ${RUN_GROUP}"
 echo "Run logs: ${RUN_LOG_ROOT}"
 echo "Environment: ${ENV_ID}"
 echo "Device: ${DEVICE}"
+echo "Seed: ${SEED}"
 echo "W&B mode: ${WANDB_MODE}"
+echo "Test episodes: ${TEST_EPISODE}"
+echo "Checkpoint rule: ${CHECKPOINT_RULE}"
 
 run_hierarchical_regime "frozen_encoder" "config/atari100k_frozen_encoder.yaml"
 run_hierarchical_regime "two_phase" "config/atari100k_two_phase.yaml"

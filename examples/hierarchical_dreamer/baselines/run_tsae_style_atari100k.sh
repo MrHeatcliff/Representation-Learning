@@ -20,6 +20,8 @@ BATCH_SIZE="${BATCH_SIZE:-16}"
 SEQ_LEN="${SEQ_LEN:-64}"
 PARALLELS="${PARALLELS:-1}"
 BENCHMARK="${BENCHMARK:-1}"
+TEST_EPISODE="${TEST_EPISODE:-3}"
+CHECKPOINT_RULE="${CHECKPOINT_RULE:-best}"
 
 BASE_CONFIG="${BASE_CONFIG:-examples/hierarchical_dreamer/config/atari100k_two_phase.yaml}"
 RUN_NAME="${RUN_NAME:-tsae-style-atari100k-${ROM_NAME}-seed${SEED}}"
@@ -63,6 +65,7 @@ mkdir -p "$(dirname "${GENERATED_CONFIG}")" "${REPO_ROOT}/${LOG_DIR}" "${REPO_RO
     --config-file "${GENERATED_CONFIG}" \
     --env-id "${ENV_ID}" \
     --device "${DEVICE}" \
+    --seed "${SEED}" \
     --logger wandb \
     --project-name "${PROJECT_NAME}" \
     --wandb-mode "${WANDB_MODE}" \
@@ -76,6 +79,8 @@ mkdir -p "$(dirname "${GENERATED_CONFIG}")" "${REPO_ROOT}/${LOG_DIR}" "${REPO_RO
     --seq-len "${SEQ_LEN}" \
     --parallels "${PARALLELS}" \
     --benchmark "${BENCHMARK}" \
+    --test-episode "${TEST_EPISODE}" \
+    --checkpoint-rule "${CHECKPOINT_RULE}" \
     --log-dir "${LOG_DIR}" \
     --model-dir "${MODEL_DIR}"
 ) 2>&1 | tee "${RUN_LOG_DIR}/${RUN_NAME}.log"

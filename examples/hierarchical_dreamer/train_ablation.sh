@@ -10,6 +10,7 @@ RUN_NAME="${RUN_NAME:?Set RUN_NAME to a descriptive W&B run name.}"
 ENV_ID="${ENV_ID:-ALE/Breakout-v5}"
 ROM_NAME="${ENV_ID##*/}"
 DEVICE="${DEVICE:-cuda:0}"
+SEED="${SEED:-1}"
 WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Ablations}"
 RUNNING_STEPS="${RUNNING_STEPS:-100000}"
@@ -21,6 +22,8 @@ BATCH_SIZE="${BATCH_SIZE:-16}"
 SEQ_LEN="${SEQ_LEN:-64}"
 PARALLELS="${PARALLELS:-1}"
 BENCHMARK="${BENCHMARK:-1}"
+TEST_EPISODE="${TEST_EPISODE:-3}"
+CHECKPOINT_RULE="${CHECKPOINT_RULE:-best}"
 
 LOG_DIR="${LOG_DIR:-logs/hierarchical-dreamer/ablations/${RUN_NAME}/${ROM_NAME}/}"
 MODEL_DIR="${MODEL_DIR:-models/hierarchical-dreamer/ablations/${RUN_NAME}/${ROM_NAME}/}"
@@ -33,6 +36,7 @@ mkdir -p "${RUN_LOG_DIR}" "${REPO_ROOT}/${LOG_DIR}" "${REPO_ROOT}/${MODEL_DIR}"
     --config-file "${CONFIG_FILE}" \
     --env-id "${ENV_ID}" \
     --device "${DEVICE}" \
+    --seed "${SEED}" \
     --logger wandb \
     --project-name "${PROJECT_NAME}" \
     --wandb-mode "${WANDB_MODE}" \
@@ -46,6 +50,8 @@ mkdir -p "${RUN_LOG_DIR}" "${REPO_ROOT}/${LOG_DIR}" "${REPO_ROOT}/${MODEL_DIR}"
     --seq-len "${SEQ_LEN}" \
     --parallels "${PARALLELS}" \
     --benchmark "${BENCHMARK}" \
+    --test-episode "${TEST_EPISODE}" \
+    --checkpoint-rule "${CHECKPOINT_RULE}" \
     --log-dir "${LOG_DIR}" \
     --model-dir "${MODEL_DIR}"
 ) 2>&1 | tee "${RUN_LOG_DIR}/${RUN_NAME}.log"

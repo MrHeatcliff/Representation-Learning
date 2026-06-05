@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import numpy as np
 from copy import deepcopy
@@ -29,6 +30,38 @@ def build_wandb_run_name(configs):
     return f"{configs.agent}-{regime}-{env_name}-seed{configs.seed}-{configs.running_steps}steps"
 
 
+def write_eval_artifact(configs, scores, checkpoint_rule, checkpoint_name, step):
+    scores = np.asarray(scores, dtype=np.float64)
+    result = {
+        "run_name": getattr(configs, "wandb_run_name", None),
+        "method": configs.agent,
+        "ablation_name": getattr(getattr(configs, "hierarchical_latent", None), "ablation_name", None),
+        "env_id": configs.env_id,
+        "seed": int(configs.seed),
+        "device": configs.device,
+        "running_steps": int(configs.running_steps),
+        "replay_ratio": float(configs.replay_ratio),
+        "batch_size": int(configs.batch_size),
+        "seq_len": int(configs.seq_len),
+        "checkpoint_rule": checkpoint_rule,
+        "checkpoint_name": checkpoint_name,
+        "step": int(step),
+        "eval_episodes": int(scores.size),
+        "mean_score": float(np.mean(scores)),
+        "std_score": float(np.std(scores)),
+        "min_score": float(np.min(scores)),
+        "max_score": float(np.max(scores)),
+        "episode_scores": scores.tolist(),
+    }
+    output_dir = Path(configs.log_dir) / "eval_results"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{checkpoint_rule}_eval.json"
+    with output_path.open("w") as file:
+        json.dump(result, file, indent=2)
+    print(f"Evaluation artifact: {output_path}")
+    return result
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Example of XuanCe: Hierarchical Dreamer for Atari.")
     parser.add_argument("--config-file", type=str, default="config/atari.yaml")
@@ -36,6 +69,7 @@ def parse_args():
     parser.add_argument("--log-dir", type=str, default=None)
     parser.add_argument("--model-dir", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--harmony", type=bool, default=None)
     parser.add_argument("--logger", type=str, default=None, choices=["tensorboard", "wandb"])
     parser.add_argument("--project-name", type=str, default=None)
@@ -56,6 +90,8 @@ def parse_args():
     parser.add_argument('--parallels', type=int, default=None)
     parser.add_argument("--test", type=int, default=None)
     parser.add_argument("--benchmark", type=int, default=None)
+    parser.add_argument("--test-episode", type=int, default=None)
+    parser.add_argument("--checkpoint-rule", type=str, default=None, choices=["best", "final"])
     return parser.parse_args()
 
 
@@ -96,28 +132,44 @@ if __name__ == '__main__':
         test_episode = configs.test_episode
         num_epoch = int(train_steps / eval_interval)
 
-        test_scores = Agent.test(test_episodes=test_episode, test_envs=test_envs, close_envs=False)
-        Agent.save_model(model_name="best_model.pth")
-        best_scores_info = {"mean": np.mean(test_scores),
-                            "std": np.std(test_scores),
-                            "step": Agent.current_step}
-        for i_epoch in range(num_epoch):
-            print("Epoch: %d/%d:" % (i_epoch, num_epoch))
-            Agent.train(eval_interval)
+        checkpoint_rule = getattr(configs, "checkpoint_rule", "best")
+        if checkpoint_rule == "best":
             test_scores = Agent.test(test_episodes=test_episode, test_envs=test_envs, close_envs=False)
+            Agent.save_model(model_name="best_model.pth")
+            best_scores_info = {"mean": np.mean(test_scores),
+                                "std": np.std(test_scores),
+                                "step": Agent.current_step,
+                                "scores": test_scores}
+            for i_epoch in range(num_epoch):
+                print("Epoch: %d/%d:" % (i_epoch, num_epoch))
+                Agent.train(eval_interval)
+                test_scores = Agent.test(test_episodes=test_episode, test_envs=test_envs, close_envs=False)
 
-            can_save = np.mean(test_scores) > best_scores_info["mean"]
-            can_save |= (abs(np.mean(test_scores) - best_scores_info["mean"]) < 1e-6
-                         and np.std(test_scores) < best_scores_info["std"])
-            if can_save:
-                best_scores_info = {"mean": np.mean(test_scores),
-                                    "std": np.std(test_scores),
-                                    "step": Agent.current_step}
-                # save best model
-                Agent.save_model(model_name="best_model.pth")
-        # end benchmarking
+                can_save = np.mean(test_scores) > best_scores_info["mean"]
+                can_save |= (abs(np.mean(test_scores) - best_scores_info["mean"]) < 1e-6
+                             and np.std(test_scores) < best_scores_info["std"])
+                if can_save:
+                    best_scores_info = {"mean": np.mean(test_scores),
+                                        "std": np.std(test_scores),
+                                        "step": Agent.current_step,
+                                        "scores": test_scores}
+                    # save best model
+                    Agent.save_model(model_name="best_model.pth")
+            print("Best Model Score: %.2f, std=%.2f" % (best_scores_info["mean"], best_scores_info["std"]))
+            write_eval_artifact(configs, best_scores_info["scores"], "best", "best_model.pth", best_scores_info["step"])
+        else:
+            for i_epoch in range(num_epoch):
+                print("Epoch: %d/%d:" % (i_epoch, num_epoch))
+                Agent.train(eval_interval)
+            Agent.save_model(model_name="final_model.pth")
+            test_scores = Agent.test(test_episodes=test_episode, test_envs=test_envs, close_envs=False)
+            final_scores_info = {"mean": np.mean(test_scores),
+                                 "std": np.std(test_scores),
+                                 "step": Agent.current_step,
+                                 "scores": test_scores}
+            print("Final Model Score: %.2f, std=%.2f" % (final_scores_info["mean"], final_scores_info["std"]))
+            write_eval_artifact(configs, final_scores_info["scores"], "final", "final_model.pth", final_scores_info["step"])
         test_envs.close()
-        print("Best Model Score: %.2f, std=%.2f" % (best_scores_info["mean"], best_scores_info["std"]))
     else:
         if configs.test:
             def env_fn():

@@ -1,43 +1,40 @@
-dl_toolbox: "torch"  # The deep learning toolbox. Choices: "torch", "mindspore", "tensorlayer"
-project_name: "Hierarchical-Dreamer-Atari100K"
-logger: "wandb"  # Choices: tensorboard, wandb.
+dl_toolbox: torch
+project_name: Hierarchical-Dreamer-Atari100K
+logger: wandb
 wandb_user_name: null
-render: False
-render_mode: 'rgb_array' # Choices: 'human', 'rgb_array'.
+render: false
+render_mode: rgb_array
 fps: 50
-test_mode: False
+test_mode: false
 test: 0
 benchmark: 1
-device: "cuda:0"
-distributed_training: False  # Whether to use multi-GPU for distributed training.
-master_port: '12355'  # The master port for current experiment when use distributed training.
-
-agent: "HierarchicalDreamer"
-vectorize: "Dummy_Atari"
-env_name: "Atari"
-env_id: "ALE/Breakout-v5"
+device: cuda:0
+distributed_training: false
+master_port: '12355'
+agent: HierarchicalDreamer
+vectorize: Dummy_Atari
+env_name: Atari
+env_id: ALE/Breakout-v5
 env_seed: 1
-obs_type: "grayscale"  # choice for Atari env: ram, rgb, grayscale
-img_size: [64, 64]  # default is 210 x 160 in gym[Atari]
-num_stack: 1  # frame stack trick
-frame_skip: 4  # frame skip trick  (action_repeat = 4 for atari100k)
+obs_type: grayscale
+img_size:
+- 64
+- 64
+num_stack: 1
+frame_skip: 4
 noop_max: 30
-representation: "HierarchicalDreamerWorldModel"
-learner: "HierarchicalDreamer_Learner"
-policy: "HierarchicalDreamerPolicy"
-runner: "DRL"
-
-# world_model & actor_critic start
-harmony: False
-
+representation: HierarchicalDreamerWorldModel
+learner: HierarchicalDreamer_Learner
+policy: HierarchicalDreamerPolicy
+runner: DRL
+harmony: false
 distribution:
   validate_args: false
   type: auto
-pixel: True
+pixel: true
 env_config:
   screen_size: 64
-activation: 'silu'
-
+activation: silu
 actor:
   ent_coef: 0.0003
   min_std: 0.1
@@ -67,70 +64,109 @@ critic:
   tau: 0.02
   bins: 255
   clip_gradients: 100.0
-
 hierarchical_latent:
   enabled: true
-  ablation_name: "full"
-  control_mode: "hts"  # Choices: hts, flat_mh, flat_sae, sgf_style_flat_same_code.
+  ablation_name: sgf_style_flat_same_code
+  control_mode: sgf_style_flat_same_code
   trunk_hidden_size: 512
   trunk_output_size: 256
   num_heads: 6
   head_dim: 32
-  flat_code_dim: 192  # num_heads * head_dim for flat controls.
-  flat_topk: 48  # sum(level-wise topk) for flat SAE.
+  flat_code_dim: 192
+  flat_topk: 48
   flat_trunk_hidden_size: 512
   flat_trunk_output_size: 256
-  activation: "silu"
-  sparsity_topk: [8, 8, 8, 8, 8, 8]
-  integration: "residual"  # Choices: none, residual, replace.
+  activation: silu
+  sparsity_topk:
+  - 8
+  - 8
+  - 8
+  - 8
+  - 8
+  - 8
+  integration: residual
   residual_scale: 0.1
   reconstruction:
     decoder_hidden_size: 512
-    betas: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    betas:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
     stop_gradient_lower_levels: true
   sparse_dynamics:
     predictor_hidden_size: 512
-    strides: [32, 16, 8, 4, 2, 1]
-    alphas: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    strides:
+    - 32
+    - 16
+    - 8
+    - 4
+    - 2
+    - 1
+    alphas:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
     require_strict_decreasing: true
     stop_gradient_lower_levels: true
     target_stop_gradient: true
-    action_mode: "subsequence"  # Choices: state_only, current_action, subsequence.
+    action_mode: subsequence
   flat_mh:
-    horizons: [1, 2, 4, 8, 16, 32]
-    alphas: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    horizons:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    alphas:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
   temporal_consistency:
-    mode: "contrastive"  # Choices: none, smooth, contrastive.
-    projector_type: "nonlinear"  # Choices: none, linear, nonlinear.
-    far_negative_mode: "hard"  # Logged config for analysis: none, hard, soft.
+    mode: none
+    projector_type: nonlinear
+    far_negative_mode: hard
     projection_hidden_size: 128
     projection_dim: 64
     positive_stride: 1
     temperature: 0.1
   variance_covariance:
-    mode: "both"  # Choices: none, variance, covariance, both.
+    mode: both
     std_target: 1.0
     variance_weight: 1.0
     covariance_weight: 0.04
   sparsity:
-    mode: "level_topk"  # Choices: none, l1, level_topk, global_topk.
-    budget_schedule: "uniform"  # Logged config: uniform, front, back, custom.
-    gammas: [0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001]
+    mode: none
+    budget_schedule: uniform
+    gammas:
+    - 0.0001
+    - 0.0001
+    - 0.0001
+    - 0.0001
+    - 0.0001
+    - 0.0001
   loss_weights:
-    hierarchical: 1.0
+    hierarchical: 0.0
     sparse_dynamics: 1.0
-    temporal: 0.1
-    variance_covariance: 0.1
-    sparsity: 1.0
-
+    temporal: 0.0
+    variance_covariance: 1.0
+    sparsity: 0.0
 training_regime:
-  name: "two_phase"
+  name: two_phase
   freeze_encoder: false
   wm_only_phase1: true
   phase1_gradient_steps: 20000
   encoder_lr_scale: 0.1
   hierarchy_lr_scale: 1.0
-
 world_model:
   discrete_size: 32
   stochastic_size: 32
@@ -191,39 +227,32 @@ world_model:
       kw:
         eps: 0.001
     dense_units: 512
-
 gamma: 0.996996996996997
 lmbda: 0.95
 horizon: 15
-
 unimix: 0.01
-hafner_initialization: True
-# world_model & actor_critic end
-
+hafner_initialization: true
 seed: 1
 parallels: 1
-buffer_size: 1000000  # 1e6
+buffer_size: 1000000
 batch_size: 16
 seq_len: 64
-learning_rate_model: 0.0001  # 1e-4
-learning_rate_actor: 0.00008  # 8e-5
-learning_rate_critic: 0.00008  # 8e-5
-
-replay_ratio: 1  # gradient_step / replay_step
-running_steps: 100000  # 100k
+learning_rate_model: 0.0001
+learning_rate_actor: 8.0e-05
+learning_rate_critic: 8.0e-05
+replay_ratio: 1
+running_steps: 100000
 start_training: 1024
-
-use_grad_clip: False  # gradient normalization
+use_grad_clip: false
 clip_type: 1
 grad_clip_norm: 100.0
-use_actions_mask: False
-use_obsnorm: False
-use_rewnorm: False
+use_actions_mask: false
+use_obsnorm: false
+use_rewnorm: false
 obsnorm_range: 5
 rewnorm_range: 5
-
 test_steps: 10000
 eval_interval: 2000
 test_episode: 3
-log_dir: "logs/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/"
-model_dir: "models/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/"
+log_dir: logs/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/
+model_dir: models/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/

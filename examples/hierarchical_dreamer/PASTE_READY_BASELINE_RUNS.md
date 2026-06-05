@@ -12,6 +12,171 @@ Paper-final Atari same-code runs must use the final checkpoint and `100` eval
 episodes. The completed local DreamerV3 and HTS-WM rows below are development
 results because they used best-checkpoint selection and `3` eval episodes.
 
+For the remaining setup checklist, see
+`examples/hierarchical_dreamer/PAPER_SETUP_TASKS.md`.
+
+## Synthetic Multi-Timescale Dataset
+
+Generate the P0 state-vector fixed buffer:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+.venv/bin/python examples/hierarchical_dreamer/synthetic_multiscale/generate_dataset.py \
+  --output data/synthetic_multiscale_state \
+  --train-trajectories 10000 \
+  --val-trajectories 2000 \
+  --test-trajectories 2000 \
+  --length 128 \
+  --noise-std 0.01 \
+  --seed 0
+```
+
+Small smoke dataset:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+rm -rf /tmp/htswm_synth_smoke
+.venv/bin/python examples/hierarchical_dreamer/synthetic_multiscale/generate_dataset.py \
+  --output /tmp/htswm_synth_smoke \
+  --train-trajectories 4 \
+  --val-trajectories 2 \
+  --test-trajectories 2 \
+  --length 16 \
+  --shard-size 2 \
+  --seed 7
+```
+
+## Paper-Final Same-Code Atari100K Queue
+
+Single-method sanity run:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+METHODS=dreamer \
+SEEDS=0 \
+ENV_ID=ALE/Breakout-v5 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-Paper-Final \
+examples/hierarchical_dreamer/run_paper_final_samecode_atari100k.sh
+```
+
+DreamerV3 + HTS-WM Breakout, five seeds:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+METHODS=dreamer,htswm \
+SEEDS=0,1,2,3,4 \
+ENV_ID=ALE/Breakout-v5 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-Paper-Final \
+examples/hierarchical_dreamer/run_paper_final_samecode_atari100k.sh
+```
+
+## Same-Code P0 Ablation Controls
+
+These commands use the paper-locked control implementations. They are not the
+old smoke approximations.
+
+Flat multi-horizon, Breakout seed 0:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+CONFIG_FILE=config/generated_configs/flat_mh.yaml \
+RUN_NAME=flat-mh-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+Flat SAE, Breakout seed 0:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+CONFIG_FILE=config/generated_configs/flat_sae.yaml \
+RUN_NAME=flat-sae-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+SGF-style flat same-code, Breakout seed 0:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+CONFIG_FILE=config/generated_configs/sgf_style_flat_same_code.yaml \
+RUN_NAME=sgf-style-flat-same-code-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+Larger flat parameter-matched control, Breakout seed 0:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+
+.venv/bin/python examples/hierarchical_dreamer/search_larger_flat_param.py \
+  --base examples/hierarchical_dreamer/config/atari100k_two_phase.yaml \
+  --output-config examples/hierarchical_dreamer/config/generated_configs/larger_flat_param_breakout.yaml \
+  --artifact examples/hierarchical_dreamer/config/generated_configs/larger_flat_param_breakout_search.json \
+  --actions-dim 4 \
+  --min-width 64 \
+  --max-width 2048 \
+  --step 8 \
+  --tolerance 0.02
+
+PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
+CONFIG_FILE=config/generated_configs/larger_flat_param_breakout.yaml \
+RUN_NAME=larger-flat-param-breakout-seed0-100k \
+ENV_ID=ALE/Breakout-v5 \
+SEED=0 \
+DEVICE=cuda:0 \
+WANDB_MODE=online \
+PROJECT_NAME=HTS-WM-P0-Ablations \
+RUNNING_STEPS=100000 \
+REPLAY_RATIO=1 \
+CHECKPOINT_RULE=final \
+TEST_EPISODE=100 \
+examples/hierarchical_dreamer/train_ablation.sh
+```
+
+For Atari games with a different action-space size, rerun
+`search_larger_flat_param.py` with that game's `--actions-dim` before launching
+`larger_flat_param`.
+
 ## Completed Runs
 
 | Method | Game | Seed | Score Used In Tracker | W&B Run | Paper Status | Notes |

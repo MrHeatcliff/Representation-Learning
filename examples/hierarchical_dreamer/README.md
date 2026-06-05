@@ -74,6 +74,8 @@ Paper experiment registry and result tracker:
 
 ```bash
 less examples/hierarchical_dreamer/PAPER_EXPERIMENT_REGISTRY.md
+less examples/hierarchical_dreamer/PAPER_BASELINE_MATRIX.md
+less examples/hierarchical_dreamer/PAPER_SETUP_TASKS.md
 less examples/hierarchical_dreamer/RESULTS_TRACKER.md
 ```
 

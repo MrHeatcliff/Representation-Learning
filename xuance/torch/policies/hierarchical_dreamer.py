@@ -19,6 +19,12 @@ def _listify(value, length: int):
     return values
 
 
+def _cfg_get(config, key: str, default=None):
+    if hasattr(config, "get"):
+        return config.get(key, default)
+    return getattr(config, key, default)
+
+
 class SparseLatentHeads(nn.Module):
     """Maps Dreamer recurrent states h_t into multiple sparse latent heads.
 
@@ -279,6 +285,205 @@ class MultiStrideSparseDynamics(nn.Module):
         return loss, info
 
 
+class FlatLatentEncoder(nn.Module):
+    """Maps h_t into one flat latent code for same-code controls."""
+
+    def __init__(
+        self,
+        recurrent_state_size: int,
+        trunk_hidden_size: int,
+        trunk_output_size: int,
+        code_dim: int,
+        activation: str,
+        topk: int | None = None,
+    ):
+        super().__init__()
+        self.code_dim = code_dim
+        self.topk = topk
+        self.trunk = nn.Sequential(
+            nn.Linear(recurrent_state_size, trunk_hidden_size),
+            nn.SiLU(),
+            nn.Linear(trunk_hidden_size, trunk_output_size),
+            nn.SiLU(),
+        )
+        self.head = nn.Linear(trunk_output_size, code_dim)
+        self.activation = SparseLatentHeads._build_activation(activation)
+
+    def _apply_topk(self, values: Tensor) -> Tensor:
+        if self.topk is None or self.topk <= 0 or self.topk >= self.code_dim:
+            return values
+        _, indices = torch.topk(values.abs(), k=self.topk, dim=-1)
+        mask = torch.zeros_like(values).scatter_(-1, indices, 1.0)
+        return values * mask
+
+    def forward(self, recurrent_states: Tensor) -> Tensor:
+        original_shape = recurrent_states.shape[:-1]
+        flat_h = recurrent_states.reshape(-1, recurrent_states.shape[-1])
+        code = self.activation(self.head(self.trunk(flat_h)))
+        code = self._apply_topk(code)
+        return code.reshape(*original_shape, self.code_dim)
+
+
+class FlatReconstructionDecoder(nn.Module):
+    """Single decoder for a flat sparse autoencoder control."""
+
+    def __init__(self, code_dim: int, recurrent_state_size: int, hidden_size: int):
+        super().__init__()
+        self.decoder = nn.Sequential(
+            nn.Linear(code_dim, hidden_size),
+            nn.SiLU(),
+            nn.Linear(hidden_size, recurrent_state_size),
+        )
+
+    def forward(self, code: Tensor, target_h: Tensor) -> Tuple[Tensor, dict[str, Tensor]]:
+        reconstructed = self.decoder(code)
+        loss = (target_h.detach() - reconstructed).pow(2).mean()
+        return loss, {
+            "hierarchical_latent/flat_recon_loss": loss.detach(),
+            "hierarchical_latent/recon_loss": loss.detach(),
+        }
+
+
+class FlatMultiHorizonDynamics(nn.Module):
+    """Flat multi-horizon dynamics control with one predictor per horizon."""
+
+    def __init__(
+        self,
+        code_dim: int,
+        recurrent_state_size: int,
+        actions_dim: int,
+        hidden_size: int,
+        horizons: list[int],
+        alphas: list[float],
+        target_stop_gradient: bool,
+        action_mode: str,
+    ):
+        super().__init__()
+        self.horizons = horizons
+        self.alphas = alphas
+        self.target_stop_gradient = target_stop_gradient
+        self.action_mode = action_mode
+        if action_mode == "state_only":
+            action_context_dims = [0 for _ in horizons]
+        elif action_mode == "current_action":
+            action_context_dims = [actions_dim for _ in horizons]
+        elif action_mode == "subsequence":
+            action_context_dims = [horizon * actions_dim for horizon in horizons]
+        else:
+            raise ValueError(
+                "flat_mh.action_mode must be one of {state_only, current_action, subsequence}."
+            )
+        self.predictors = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(code_dim + action_context_dims[index], hidden_size),
+                    nn.SiLU(),
+                    nn.Linear(hidden_size, hidden_size),
+                    nn.SiLU(),
+                    nn.Linear(hidden_size, recurrent_state_size),
+                )
+                for index in range(len(horizons))
+            ]
+        )
+
+    def _action_context(self, actions: Tensor, horizon: int) -> Tensor | None:
+        if self.action_mode == "state_only":
+            return None
+        if self.action_mode == "current_action":
+            return actions[1:actions.shape[0] - horizon + 1]
+        return MultiStrideSparseDynamics._action_windows(actions, horizon)
+
+    def forward(self, code: Tensor, actions: Tensor, target_h: Tensor) -> Tuple[Tensor, dict[str, Tensor]]:
+        loss = target_h.new_zeros(())
+        info = {}
+        for index, predictor in enumerate(self.predictors):
+            horizon = self.horizons[index]
+            if target_h.shape[0] <= horizon:
+                info[f"hierarchical_latent/flat_mh_loss_horizon_{horizon}"] = target_h.new_zeros(())
+                continue
+            action_context = self._action_context(actions, horizon)
+            predictor_input = code[:-horizon] if action_context is None else torch.cat(
+                (code[:-horizon], action_context), dim=-1
+            )
+            predicted_h = predictor(predictor_input)
+            target_future_h = target_h[horizon:]
+            if self.target_stop_gradient:
+                target_future_h = target_future_h.detach()
+            horizon_loss = (target_future_h - predicted_h).pow(2).mean()
+            loss = loss + self.alphas[index] * horizon_loss
+            info[f"hierarchical_latent/flat_mh_loss_horizon_{horizon}"] = horizon_loss.detach()
+        info["hierarchical_latent/flat_mh_loss"] = loss.detach()
+        info["hierarchical_latent/sdyn_loss"] = loss.detach()
+        return loss, info
+
+
+class SGFStyleFlatControl(nn.Module):
+    """Same-code SGF-style flat projected dynamics plus VICReg."""
+
+    def __init__(
+        self,
+        recurrent_state_size: int,
+        actions_dim: int,
+        projection_hidden_size: int,
+        projection_dim: int,
+        predictor_hidden_size: int,
+        std_target: float,
+        vc_mode: str,
+        variance_weight: float,
+        covariance_weight: float,
+    ):
+        super().__init__()
+        self.vicreg = TemporalContrastiveVICReg(
+            head_dim=projection_dim,
+            projection_hidden_size=projection_hidden_size,
+            projection_dim=projection_dim,
+            projector_type="none",
+            temporal_mode="none",
+            positive_stride=1,
+            temperature=0.1,
+            std_target=std_target,
+            vc_mode=vc_mode,
+            variance_weight=variance_weight,
+            covariance_weight=covariance_weight,
+        )
+        self.projector = nn.Sequential(
+            nn.Linear(recurrent_state_size, projection_hidden_size),
+            nn.SiLU(),
+            nn.Linear(projection_hidden_size, projection_dim),
+        )
+        self.predictor = nn.Sequential(
+            nn.Linear(projection_dim + actions_dim, predictor_hidden_size),
+            nn.SiLU(),
+            nn.Linear(predictor_hidden_size, predictor_hidden_size),
+            nn.SiLU(),
+            nn.Linear(predictor_hidden_size, projection_dim),
+        )
+
+    def forward(self, recurrent_states: Tensor, actions: Tensor) -> Tuple[Tensor, Tensor, dict[str, Tensor]]:
+        projections = self.projector(recurrent_states)
+        if projections.shape[0] <= 1:
+            zero = projections.new_zeros(())
+            return zero, zero, {
+                "hierarchical_latent/sgf_predictive_loss": zero.detach(),
+                "hierarchical_latent/sgf_vicreg_loss": zero.detach(),
+            }
+        predictor_input = torch.cat((projections[:-1], actions[1:]), dim=-1)
+        predicted = self.predictor(predictor_input)
+        target = projections[1:].detach()
+        predictive_loss = (target - predicted).pow(2).mean()
+        vc_now, variance_now, covariance_now = self.vicreg._vicreg_loss(projections[:-1])
+        vc_next, variance_next, covariance_next = self.vicreg._vicreg_loss(projections[1:])
+        vc_loss = vc_now + vc_next
+        info = {
+            "hierarchical_latent/sgf_predictive_loss": predictive_loss.detach(),
+            "hierarchical_latent/sgf_vicreg_loss": vc_loss.detach(),
+            "hierarchical_latent/vicreg_loss": vc_loss.detach(),
+            "hierarchical_latent/sgf_variance_loss": (variance_now + variance_next).detach(),
+            "hierarchical_latent/sgf_covariance_loss": (covariance_now + covariance_next).detach(),
+        }
+        return predictive_loss, vc_loss, info
+
+
 class TemporalContrastiveVICReg(nn.Module):
     """Slow coarse-code contrastive loss plus VICReg-style anti-collapse terms."""
 
@@ -413,7 +618,12 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
         self.hierarchy_training_active = True
         self.hierarchical_integration = latent_config.integration
         self.hierarchical_residual_scale = latent_config.residual_scale
-        self.ablation_name = latent_config.get("ablation_name", "full")
+        self.ablation_name = _cfg_get(latent_config, "ablation_name", "full")
+        self.control_mode = _cfg_get(latent_config, "control_mode", "hts")
+        self.flat_code_dim = _cfg_get(latent_config, "flat_code_dim", latent_config.num_heads * latent_config.head_dim)
+        self.flat_topk = _cfg_get(latent_config, "flat_topk", sum(int(k) for k in _listify(
+            latent_config.sparsity_topk, latent_config.num_heads
+        )))
 
         self.sparse_latent_heads = SparseLatentHeads(
             recurrent_state_size=self.recurrent_state_size,
@@ -486,6 +696,47 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             variance_weight=latent_config.variance_covariance.variance_weight,
             covariance_weight=latent_config.variance_covariance.covariance_weight,
         )
+        flat_mh_config = _cfg_get(latent_config, "flat_mh", {})
+        flat_mh_horizons = list(_cfg_get(flat_mh_config, "horizons", [1, 2, 4, 8, 16, 32]))
+        flat_mh_alphas = list(_cfg_get(flat_mh_config, "alphas", [1.0]))
+        if len(flat_mh_alphas) == 1:
+            flat_mh_alphas = flat_mh_alphas * len(flat_mh_horizons)
+        if len(flat_mh_alphas) != len(flat_mh_horizons):
+            raise ValueError("hierarchical_latent.flat_mh.alphas must have length 1 or len(horizons).")
+        self.flat_latent_encoder = FlatLatentEncoder(
+            recurrent_state_size=self.recurrent_state_size,
+            trunk_hidden_size=_cfg_get(latent_config, "flat_trunk_hidden_size", latent_config.trunk_hidden_size),
+            trunk_output_size=_cfg_get(latent_config, "flat_trunk_output_size", latent_config.trunk_output_size),
+            code_dim=self.flat_code_dim,
+            activation=latent_config.activation,
+            topk=self.flat_topk if self.control_mode == "flat_sae" else None,
+        )
+        self.flat_reconstruction_decoder = FlatReconstructionDecoder(
+            code_dim=self.flat_code_dim,
+            recurrent_state_size=self.recurrent_state_size,
+            hidden_size=latent_config.reconstruction.decoder_hidden_size,
+        )
+        self.flat_multi_horizon_dynamics = FlatMultiHorizonDynamics(
+            code_dim=self.flat_code_dim,
+            recurrent_state_size=self.recurrent_state_size,
+            actions_dim=self.actions_dim,
+            hidden_size=latent_config.sparse_dynamics.predictor_hidden_size,
+            horizons=flat_mh_horizons,
+            alphas=flat_mh_alphas,
+            target_stop_gradient=latent_config.sparse_dynamics.target_stop_gradient,
+            action_mode=latent_config.sparse_dynamics.action_mode,
+        )
+        self.sgf_style_flat = SGFStyleFlatControl(
+            recurrent_state_size=self.recurrent_state_size,
+            actions_dim=self.actions_dim,
+            projection_hidden_size=latent_config.temporal_consistency.projection_hidden_size,
+            projection_dim=latent_config.temporal_consistency.projection_dim,
+            predictor_hidden_size=latent_config.sparse_dynamics.predictor_hidden_size,
+            std_target=latent_config.variance_covariance.std_target,
+            vc_mode=latent_config.variance_covariance.mode,
+            variance_weight=latent_config.variance_covariance.variance_weight,
+            covariance_weight=latent_config.variance_covariance.covariance_weight,
+        )
         self._move_hierarchical_modules_to_device()
         self.latest_hierarchical_recon_loss = None
         self.latest_sparse_dynamics_loss = None
@@ -500,8 +751,24 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
         self.nested_reconstruction_decoders.to(self.device)
         self.multi_stride_sparse_dynamics.to(self.device)
         self.temporal_vicreg.to(self.device)
+        self.flat_latent_encoder.to(self.device)
+        self.flat_reconstruction_decoder.to(self.device)
+        self.flat_multi_horizon_dynamics.to(self.device)
+        self.sgf_style_flat.to(self.device)
 
     def hierarchical_latent_parameters(self):
+        if self.control_mode == "flat_mh":
+            return (
+                list(self.flat_latent_encoder.parameters()) +
+                list(self.flat_multi_horizon_dynamics.parameters())
+            )
+        if self.control_mode == "flat_sae":
+            return (
+                list(self.flat_latent_encoder.parameters()) +
+                list(self.flat_reconstruction_decoder.parameters())
+            )
+        if self.control_mode == "sgf_style_flat_same_code":
+            return list(self.sgf_style_flat.parameters())
         return (
             list(self.sparse_latent_heads.parameters()) +
             list(self.sparse_latent_readout.parameters()) +
@@ -527,6 +794,13 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
                 "hierarchical_latent/head_dim": zero.detach() + self.config.hierarchical_latent.head_dim,
             }
             return recurrent_states, None
+
+        if self.control_mode == "flat_mh":
+            return self._apply_flat_mh(recurrent_states, actions)
+        if self.control_mode == "flat_sae":
+            return self._apply_flat_sae(recurrent_states)
+        if self.control_mode == "sgf_style_flat_same_code":
+            return self._apply_sgf_style_flat(recurrent_states, actions)
 
         _, sparse_heads, sparse_flat = self.sparse_latent_heads(recurrent_states)
         recon_loss, recon_info = self.nested_reconstruction_decoders(sparse_heads, recurrent_states)
@@ -571,6 +845,69 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
                 ] = level_loss.detach()
         return transformed_states, sparse_heads
 
+    def _apply_flat_mh(self, recurrent_states: Tensor, actions: Tensor) -> Tuple[Tensor, Tensor]:
+        flat_code = self.flat_latent_encoder(recurrent_states)
+        zero = recurrent_states.new_zeros(())
+        self.latest_hierarchical_recon_loss = zero
+        flat_mh_loss, flat_mh_info = self.flat_multi_horizon_dynamics(flat_code, actions, recurrent_states)
+        self.latest_sparse_dynamics_loss = flat_mh_loss
+        self.latest_temporal_contrastive_loss = zero
+        self.latest_vicreg_loss = zero
+        self.latest_sparsity_loss = zero
+        self.latest_sparse_latent_info = self._flat_code_info(flat_code, "flat_mh", flat_mh_info)
+        return recurrent_states, flat_code.unsqueeze(-2)
+
+    def _apply_flat_sae(self, recurrent_states: Tensor) -> Tuple[Tensor, Tensor]:
+        flat_code = self.flat_latent_encoder(recurrent_states)
+        recon_loss, recon_info = self.flat_reconstruction_decoder(flat_code, recurrent_states)
+        zero = recurrent_states.new_zeros(())
+        self.latest_hierarchical_recon_loss = recon_loss
+        self.latest_sparse_dynamics_loss = zero
+        self.latest_temporal_contrastive_loss = zero
+        self.latest_vicreg_loss = zero
+        self.latest_sparsity_loss = flat_code.abs().mean() * 0.0
+        self.latest_sparse_latent_info = self._flat_code_info(flat_code, "flat_sae", recon_info)
+        return recurrent_states, flat_code.unsqueeze(-2)
+
+    def _apply_sgf_style_flat(self, recurrent_states: Tensor, actions: Tensor) -> Tuple[Tensor, Tensor]:
+        predictive_loss, vc_loss, sgf_info = self.sgf_style_flat(recurrent_states, actions)
+        zero = recurrent_states.new_zeros(())
+        self.latest_hierarchical_recon_loss = zero
+        self.latest_sparse_dynamics_loss = predictive_loss
+        self.latest_temporal_contrastive_loss = zero
+        self.latest_vicreg_loss = vc_loss
+        self.latest_sparsity_loss = zero
+        self.latest_sparse_latent_info = {
+            "hierarchical_latent/active": torch.ones((), device=recurrent_states.device).detach(),
+            "hierarchical_latent/control_mode_sgf_style_flat": torch.ones((), device=recurrent_states.device).detach(),
+            "hierarchical_latent/control_mode_flat_mh": torch.zeros((), device=recurrent_states.device).detach(),
+            "hierarchical_latent/control_mode_flat_sae": torch.zeros((), device=recurrent_states.device).detach(),
+            "hierarchical_latent/control_mode_hts": torch.zeros((), device=recurrent_states.device).detach(),
+            **sgf_info,
+        }
+        return recurrent_states, None
+
+    def _flat_code_info(self, flat_code: Tensor, mode: str, extra: dict[str, Tensor]) -> dict[str, Tensor]:
+        with torch.no_grad():
+            active_mask = (flat_code.abs() > 1e-8).float()
+            active_ratio = active_mask.mean()
+            sparse_heads = flat_code.unsqueeze(-2)
+            info = {
+                "hierarchical_latent/active": torch.ones_like(active_ratio).detach(),
+                "hierarchical_latent/active_ratio": active_ratio.detach(),
+                "hierarchical_latent/actual_active_count": active_mask.sum(dim=-1).float().mean().detach(),
+                "hierarchical_latent/mean_abs": flat_code.abs().mean().detach(),
+                "hierarchical_latent/flat_code_dim": active_ratio.detach() * 0 + self.flat_code_dim,
+                "hierarchical_latent/flat_topk": active_ratio.detach() * 0 + (self.flat_topk or 0),
+                "hierarchical_latent/control_mode_hts": active_ratio.detach() * 0,
+                "hierarchical_latent/control_mode_flat_mh": active_ratio.detach() * 0 + float(mode == "flat_mh"),
+                "hierarchical_latent/control_mode_flat_sae": active_ratio.detach() * 0 + float(mode == "flat_sae"),
+                "hierarchical_latent/control_mode_sgf_style_flat": active_ratio.detach() * 0,
+                **extra,
+            }
+            info.update(self._sparse_usage_diagnostics(sparse_heads, active_mask.unsqueeze(-2)))
+            return info
+
     @staticmethod
     def _effective_rank(covariance: Tensor) -> Tensor:
         eigvals = torch.linalg.eigvalsh(covariance).clamp_min(0)
@@ -600,7 +937,7 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
         info = {}
         flat_by_level = sparse_heads.reshape(-1, sparse_heads.shape[-2], sparse_heads.shape[-1])
         active_by_level = active_mask.reshape(-1, active_mask.shape[-2], active_mask.shape[-1])
-        dead_threshold = self.config.hierarchical_latent.get("dead_feature_threshold", 1e-6)
+        dead_threshold = _cfg_get(self.config.hierarchical_latent, "dead_feature_threshold", 1e-6)
         for level in range(flat_by_level.shape[-2]):
             level_values = flat_by_level[:, level, :]
             level_active = active_by_level[:, level, :]

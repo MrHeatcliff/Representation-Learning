@@ -71,10 +71,15 @@ critic:
 hierarchical_latent:
   enabled: true
   ablation_name: "full"
+  control_mode: "hts"  # Choices: hts, flat_mh, flat_sae, sgf_style_flat_same_code.
   trunk_hidden_size: 512
   trunk_output_size: 256
   num_heads: 6
   head_dim: 32
+  flat_code_dim: 192  # num_heads * head_dim for flat controls.
+  flat_topk: 48  # sum(level-wise topk) for flat SAE.
+  flat_trunk_hidden_size: 512
+  flat_trunk_output_size: 256
   activation: "silu"
   sparsity_topk: [8, 8, 8, 8, 8, 8]
   integration: "residual"  # Choices: none, residual, replace.
@@ -91,6 +96,9 @@ hierarchical_latent:
     stop_gradient_lower_levels: true
     target_stop_gradient: true
     action_mode: "subsequence"  # Choices: state_only, current_action, subsequence.
+  flat_mh:
+    horizons: [1, 2, 4, 8, 16, 32]
+    alphas: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   temporal_consistency:
     mode: "contrastive"  # Choices: none, smooth, contrastive.
     projector_type: "nonlinear"  # Choices: none, linear, nonlinear.
