@@ -1,0 +1,15 @@
+{
+  "experiment_id": "paper_development",
+  "suite": "atari100k",
+  "task": "Breakout",
+  "condition": "default",
+  "method": "sgf_style_flat_same_code",
+  "seed": 1,
+  "run_name": "smoke-sgf-style-flat-same-code-breakout-seed1-10000steps-p0-smoke-10k",
+  "config_hash": "86856a54d2f0aaf6",
+  "code_commit": "d60fabfdc17478e504d80664c994f90e2fe0f02a",
+  "checkpoint_rule": "final",
+  "action_repeat": 4,
+  "start_wall_time": 1780911798.7336867,
+  "hns_reference_version": "common_atari100k_random_human_reference_v1"
+}

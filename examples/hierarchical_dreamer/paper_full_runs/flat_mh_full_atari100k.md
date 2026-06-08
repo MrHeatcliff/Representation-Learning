@@ -41,7 +41,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     ROM_NAME="${GAME}-v5"
-    CONFIG_FILE=config/generated_configs/flat_mh.yaml \
+    CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/flat_mh.yaml \
     RUN_NAME=flat-mh-${GAME}-seed${SEED}-100k \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
@@ -53,8 +53,11 @@ for GAME in "${GAMES[@]}"; do
     BATCH_SIZE=16 \
     SEQ_LEN=64 \
     CHECKPOINT_RULE=final \
+    EVAL_PROTOCOL=final \
     INTERMEDIATE_TEST_EPISODE=20 \
     TEST_EPISODE=100 \
+    RENDER_EVAL_VIDEO=true \
+    RENDER_INTERMEDIATE_VIDEO=false \
     examples/hierarchical_dreamer/train_ablation.sh
   done
 done

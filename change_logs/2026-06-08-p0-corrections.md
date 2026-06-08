@@ -22,6 +22,7 @@ Addressed the paper-lock P0 corrections before allowing paper-final runs.
 - Added W&B aliases `train/episode_return` and `train/episode_length` when training episodes finish, matching the DreamerV3 Atari100K paper-style learning curve source.
 - Refined training episode logging for Dreamer-style curves: added `train/agent_step`, `train/env_frame`, `train/action_repeat`, changed step reward to `train/episode_reward_mean`, and wrote local `train_episode_returns.csv`.
 - Added `scripts/aggregate_train_episode_curves.py` to bin episode returns per seed over environment frames before computing mean/std across seeds.
+- Verified the P0 Breakout smoke queue completed for 14 conditions, produced final eval JSONs, local training episode CSVs, W&B `Videos_Test` media, and aggregate training episode curves.
 
 ## Validation
 

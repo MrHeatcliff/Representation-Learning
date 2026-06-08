@@ -38,8 +38,11 @@ for GAME in "${GAMES[@]}"; do
   BATCH_SIZE=16 \
   SEQ_LEN=64 \
   CHECKPOINT_RULE=final \
+  EVAL_PROTOCOL=final \
   INTERMEDIATE_TEST_EPISODE=20 \
   TEST_EPISODE=100 \
+  RENDER_EVAL_VIDEO=true \
+  RENDER_INTERMEDIATE_VIDEO=false \
   examples/hierarchical_dreamer/run_paper_final_samecode_atari100k.sh
 done
 ```

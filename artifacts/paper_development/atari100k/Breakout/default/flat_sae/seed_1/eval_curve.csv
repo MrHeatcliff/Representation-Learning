@@ -1,0 +1,4 @@
+experiment_id,suite,task,condition,method,seed,checkpoint_path,global_step,env_steps,agent_actions,frames,action_repeat,optimizer_updates,eval_episodes,metric_name,metric_value,raw_or_normalized,config_hash,code_commit,wall_clock_seconds
+paper_development,atari100k,Breakout,default,flat_sae,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return_mean,0.0,raw,8ff449d079db0611,d60fabfdc17478e504d80664c994f90e2fe0f02a,818.864
+paper_development,atari100k,Breakout,default,flat_sae,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return_std,0.0,raw,8ff449d079db0611,d60fabfdc17478e504d80664c994f90e2fe0f02a,818.864
+paper_development,atari100k,Breakout,default,flat_sae,1,final_model.pth,10000,10000,10000,40000,4,1122,3,hns_mean,-5.902777777777778,normalized,8ff449d079db0611,d60fabfdc17478e504d80664c994f90e2fe0f02a,818.864

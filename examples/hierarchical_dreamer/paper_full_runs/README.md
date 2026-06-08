@@ -21,6 +21,7 @@ replay_ratio = 0.125
 
 | File | Method | Status |
 |---|---|---|
+| `ATARI100K_26GAME_BASELINE_QUEUE.md` | Paste-ready 26-game queue for all currently ready same-code baselines | READY |
 | `dreamerv3_full_atari100k.md` | DreamerV3 anchor | READY |
 | `flat_mh_full_atari100k.md` | Flat multi-horizon same-code control | READY |
 

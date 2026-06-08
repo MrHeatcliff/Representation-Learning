@@ -144,14 +144,14 @@ run_tsae_style() {
   examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh
 }
 
-run_dreamer
-run_hts_config "hts-full" "examples/hierarchical_dreamer/config/atari100k_two_phase.yaml"
-run_hts_config "flat-sae" "config/generated_configs/flat_sae.yaml"
-run_hts_config "flat-mh" "config/generated_configs/flat_mh.yaml"
-run_hts_config "sgf-style-flat-same-code" "config/generated_configs/sgf_style_flat_same_code.yaml"
-run_hts_config "recon-only-hierarchy" "config/generated_configs/recon_only_hierarchy.yaml"
-run_hts_config "dense-multistride-no-sparse" "config/generated_configs/dense_multistride_no_sparse.yaml"
-run_hts_config "hts-no-hier" "config/generated_configs/hts_no_hier.yaml"
+# run_dreamer
+# run_hts_config "hts-full" "config/atari100k_two_phase.yaml"
+# run_hts_config "flat-sae" "config/generated_configs/flat_sae.yaml"
+# run_hts_config "flat-mh" "config/generated_configs/flat_mh.yaml"
+# run_hts_config "sgf-style-flat-same-code" "config/generated_configs/sgf_style_flat_same_code.yaml"
+# run_hts_config "recon-only-hierarchy" "config/generated_configs/recon_only_hierarchy.yaml"
+# run_hts_config "dense-multistride-no-sparse" "config/generated_configs/dense_multistride_no_sparse.yaml"
+# run_hts_config "hts-no-hier" "config/generated_configs/hts_no_hier.yaml"
 run_hts_config "hts-no-sdyn" "config/generated_configs/hts_no_sdyn.yaml"
 run_hts_config "hts-no-temp" "config/generated_configs/hts_no_temp.yaml"
 run_hts_config "hts-no-vc" "config/generated_configs/hts_no_vc.yaml"
@@ -160,3 +160,4 @@ run_xuance_harmony
 run_tsae_style
 
 echo "All P0 Breakout smoke runs finished."
+

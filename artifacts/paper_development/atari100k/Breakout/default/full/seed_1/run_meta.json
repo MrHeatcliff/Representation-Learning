@@ -1,0 +1,15 @@
+{
+  "experiment_id": "paper_development",
+  "suite": "atari100k",
+  "task": "Breakout",
+  "condition": "default",
+  "method": "full",
+  "seed": 1,
+  "run_name": "smoke-hts-full-breakout-seed1-10000steps-p0-smoke-10k",
+  "config_hash": "675fb3fda1c5f559",
+  "code_commit": "d60fabfdc17478e504d80664c994f90e2fe0f02a",
+  "checkpoint_rule": "final",
+  "action_repeat": 4,
+  "start_wall_time": 1780909306.6581998,
+  "hns_reference_version": "common_atari100k_random_human_reference_v1"
+}

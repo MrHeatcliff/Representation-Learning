@@ -28,6 +28,11 @@ def infer_run_fields(path: Path) -> dict[str, str]:
             fields["condition"] = parts[index + 1]
         if part.endswith("-v5") or part in ("Breakout", "Pong"):
             fields["task"] = part.replace("-v5", "")
+        lowered = part.lower()
+        if "breakout" in lowered:
+            fields["task"] = "Breakout"
+        elif "pong" in lowered:
+            fields["task"] = "Pong"
     return fields
 
 

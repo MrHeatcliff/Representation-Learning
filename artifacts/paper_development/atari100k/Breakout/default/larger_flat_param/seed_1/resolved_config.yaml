@@ -1,0 +1,272 @@
+dl_toolbox: torch
+project_name: HTS-WM-P0-Smoke
+logger: wandb
+wandb_user_name: null
+render: false
+render_mode: rgb_array
+fps: 50
+test_mode: false
+test: 0
+benchmark: 1
+device: cuda:0
+distributed_training: false
+master_port: '12355'
+agent: HierarchicalDreamer
+vectorize: Dummy_Atari
+env_name: Atari
+env_id: ALE/Breakout-v5
+env_seed: 1
+obs_type: grayscale
+img_size:
+- 64
+- 64
+num_stack: 1
+frame_skip: 4
+noop_max: 30
+representation: HierarchicalDreamerWorldModel
+learner: HierarchicalDreamer_Learner
+policy: HierarchicalDreamerPolicy
+runner: DRL
+harmony: false
+distribution:
+  validate_args: false
+  type: auto
+pixel: true
+env_config:
+  screen_size: 64
+activation: silu
+actor:
+  ent_coef: 0.0003
+  min_std: 0.1
+  max_std: 1.0
+  init_std: 2.0
+  mlp_layers: 2
+  layer_norm:
+    kw:
+      eps: 0.001
+  dense_units: 512
+  clip_gradients: 100.0
+  unimix: 0.01
+  action_clip: 1.0
+  moments:
+    decay: 0.99
+    max: 1.0
+    percentile:
+      low: 0.05
+      high: 0.95
+critic:
+  mlp_layers: 2
+  layer_norm:
+    kw:
+      eps: 0.001
+  dense_units: 512
+  soft_update_freq: 1
+  tau: 0.02
+  bins: 255
+  clip_gradients: 100.0
+hierarchical_latent:
+  enabled: true
+  ablation_name: larger_flat_param
+  control_mode: flat_mh
+  trunk_hidden_size: 512
+  trunk_output_size: 256
+  num_heads: 6
+  head_dim: 32
+  flat_code_dim: 192
+  flat_topk: 48
+  flat_trunk_hidden_size: 632
+  flat_trunk_output_size: 632
+  activation: silu
+  sparsity_topk:
+  - 8
+  - 8
+  - 8
+  - 8
+  - 8
+  - 8
+  integration: residual
+  residual_scale: 0.1
+  reconstruction:
+    decoder_hidden_size: 512
+    betas:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    stop_gradient_lower_levels: true
+  sparse_dynamics:
+    predictor_hidden_size: 632
+    strides:
+    - 32
+    - 16
+    - 8
+    - 4
+    - 2
+    - 1
+    alphas:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    require_strict_decreasing: true
+    stop_gradient_lower_levels: true
+    target_stop_gradient: true
+    action_mode: subsequence
+  flat_mh:
+    horizons:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    alphas:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  temporal_consistency:
+    mode: none
+    projector_type: nonlinear
+    far_negative_mode: hard
+    projection_hidden_size: 128
+    projection_dim: 64
+    positive_stride: 1
+    temperature: 0.1
+  variance_covariance:
+    mode: none
+    std_target: 1.0
+    variance_weight: 1.0
+    covariance_weight: 0.04
+  sparsity:
+    mode: none
+    budget_schedule: uniform
+    gammas:
+    - 0.0001
+    - 0.0001
+    - 0.0001
+    - 0.0001
+    - 0.0001
+    - 0.0001
+  loss_weights:
+    hierarchical: 0.0
+    sparse_dynamics: 1.0
+    temporal: 0.0
+    variance_covariance: 0.0
+    sparsity: 0.0
+training_regime:
+  name: two_phase
+  freeze_encoder: false
+  wm_only_phase1: true
+  phase1_gradient_steps: 20000
+  encoder_lr_scale: 0.1
+  hierarchy_lr_scale: 1.0
+world_model:
+  discrete_size: 32
+  stochastic_size: 32
+  kl_dynamic: 0.5
+  kl_representation: 0.1
+  kl_free_nats: 1.0
+  kl_regularizer: 1.0
+  continue_scale_factor: 1.0
+  clip_gradients: 1000.0
+  learnable_initial_recurrent_state: true
+  encoder:
+    cnn_channels_multiplier: 32
+    mlp_layers: 2
+    cnn_layer_norm:
+      kw:
+        eps: 0.001
+    mlp_layer_norm:
+      kw:
+        eps: 0.001
+    dense_units: 512
+  recurrent_model:
+    recurrent_state_size: 512
+    layer_norm:
+      kw:
+        eps: 0.001
+    dense_units: 512
+  transition_model:
+    hidden_size: 512
+    layer_norm:
+      kw:
+        eps: 0.001
+  representation_model:
+    hidden_size: 512
+    layer_norm:
+      kw:
+        eps: 0.001
+  observation_model:
+    cnn_channels_multiplier: 32
+    mlp_layers: 2
+    cnn_layer_norm:
+      kw:
+        eps: 0.001
+    mlp_layer_norm:
+      kw:
+        eps: 0.001
+    dense_units: 512
+  reward_model:
+    mlp_layers: 2
+    layer_norm:
+      kw:
+        eps: 0.001
+    dense_units: 512
+    bins: 255
+  discount_model:
+    learnable: true
+    mlp_layers: 2
+    layer_norm:
+      kw:
+        eps: 0.001
+    dense_units: 512
+gamma: 0.996996996996997
+lmbda: 0.95
+horizon: 15
+unimix: 0.01
+hafner_initialization: true
+seed: 1
+parallels: 1
+buffer_size: 1000000
+batch_size: 16
+seq_len: 64
+learning_rate_model: 0.0001
+learning_rate_actor: 8.0e-05
+learning_rate_critic: 8.0e-05
+replay_ratio: 0.125
+running_steps: 10000
+start_training: 1024
+use_grad_clip: false
+clip_type: 1
+grad_clip_norm: 100.0
+use_actions_mask: false
+use_obsnorm: false
+use_rewnorm: false
+obsnorm_range: 5
+rewnorm_range: 5
+test_steps: 10000
+eval_interval: 2500
+test_episode: 3
+log_dir: logs/p0_smoke/smoke-larger-flat-param-breakout-seed1-10000steps-p0-smoke-10k/
+model_dir: models/p0_smoke/smoke-larger-flat-param-breakout-seed1-10000steps-p0-smoke-10k/
+wandb_mode: online
+wandb_run_name: smoke-larger-flat-param-breakout-seed1-10000steps-p0-smoke-10k
+intermediate_test_episode: 3
+checkpoint_rule: final
+eval_protocol: final
+render_eval_video: true
+render_intermediate_video: false
+artifact_root: artifacts
+experiment_id: paper_development
+suite: atari100k
+condition: default
+episode_length: 100000.0
+is_continuous: false
+act_shape: 4
