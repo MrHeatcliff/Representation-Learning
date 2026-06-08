@@ -293,12 +293,9 @@ PROJECT_NAME=HTS-WM-Ablations
 ENV_ID=ALE/Breakout-v5
 RUNNING_STEPS=100000
 
-# XuanCe replay_ratio is minibatch updates per agent step.
-# Approximate DreamerV3 current-main train_ratio=256 with 16x64 batches:
-REPLAY_RATIO=0.25
-
-# Approximate DreamerV3 paper replay_ratio=128 with 16x64 batches:
-# REPLAY_RATIO=0.125
+# XuanCe replay_ratio is minibatch updates per agent step after start_training.
+# Canonical same-code value for Dreamer/HTS-WM ablations:
+REPLAY_RATIO=1
 ```
 
 Reference generate-and-launch pattern. Replace every placeholder before running:
@@ -762,12 +759,13 @@ Regenerate per game if the action-space size differs.
 
 ### Dense Multi-Stride
 
-`READY BY FLAGS`: disables sparsity while keeping multiple levels, prefixes,
-and strides. This matches the locked dense multi-stride definition as long as it
-is not flattened into one concatenated head.
+`READY`: disables sparsity while keeping multiple levels, prefixes, strides,
+action-subsequence predictors, temporal loss, and VC. This matches the locked
+dense multi-stride definition as long as it is not flattened into one
+concatenated head.
 
 ```bash
---set hierarchical_latent.ablation_name=dense_multi_stride \
+--set hierarchical_latent.ablation_name=dense_multistride_no_sparse \
 --set hierarchical_latent.sparsity.mode=none \
 --set hierarchical_latent.loss_weights.sparsity=0.0
 ```
@@ -787,8 +785,8 @@ Same-code XuanCe command:
 ENV_ID=ALE/Breakout-v5 \
 SEED=1 \
 DEVICE=cuda:0 \
-REPLAY_RATIO=0.25 \
-RUN_NAME=XuanCe-HarmonyDream-Breakout-v5-seed1-100000steps-rr0.25 \
+REPLAY_RATIO=1 \
+RUN_NAME=XuanCe-HarmonyDream-Breakout-v5-seed1-100000steps-rr1 \
 examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
 ```
 
@@ -944,7 +942,7 @@ reported as approximations rather than as those external methods.
 Runnable now for Atari100K-style single-game XuanCe runs:
 
 ```bash
-ENV_ID=ALE/Breakout-v5 RUNNING_STEPS=100000 REPLAY_RATIO=0.25 \
+ENV_ID=ALE/Breakout-v5 RUNNING_STEPS=100000 REPLAY_RATIO=1 \
 CONFIG_FILE=config/generated_configs/full_htswm.yaml \
 RUN_NAME=tab-protocol-atari-breakout-full \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -1048,8 +1046,10 @@ Runnable training variants:
 --set hierarchical_latent.temporal_consistency.mode=contrastive
 ```
 
-`far_negative_mode` is currently config tracking only; true no/hard/soft sampler
-behavior still needs implementation.
+`far_negative_mode` is implemented in the same-code HTS-WM path. `none` uses
+positive temporal consistency only, `hard` keeps far same-trajectory negatives as
+contrastive negatives while masking near positives, and `soft` downweights those
+far same-trajectory negatives.
 
 ### tab:ablation-plan - Core Ablation Plan
 
@@ -1072,7 +1072,6 @@ Covered axes:
 Missing/partial axes:
 
 - adaptive sparse budget
-- true far-negative modes
 - separate trunks
 - partial gradient scaling
 - grouped loss harmonization

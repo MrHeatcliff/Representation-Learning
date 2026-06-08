@@ -66,7 +66,7 @@ critic:
   clip_gradients: 100.0
 hierarchical_latent:
   enabled: true
-  ablation_name: dense_multistride_no_sparse
+  ablation_name: hts_no_sdyn
   control_mode: hts
   trunk_hidden_size: 512
   trunk_output_size: 256
@@ -145,7 +145,7 @@ hierarchical_latent:
     variance_weight: 1.0
     covariance_weight: 0.04
   sparsity:
-    mode: none
+    mode: level_topk
     budget_schedule: uniform
     gammas:
     - 0.0001
@@ -156,10 +156,10 @@ hierarchical_latent:
     - 0.0001
   loss_weights:
     hierarchical: 1.0
-    sparse_dynamics: 1.0
+    sparse_dynamics: 0.0
     temporal: 0.1
     variance_covariance: 0.1
-    sparsity: 0.0
+    sparsity: 1.0
 training_regime:
   name: two_phase
   freeze_encoder: false

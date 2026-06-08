@@ -106,14 +106,14 @@ When a run finishes:
 | `P0-MECH-02` | P0 | level-by-horizon heatmap | PARTIAL: HTS losses and Synthetic labels exist; extractor/table not ready | `tab:level-horizon`, `fig:level-horizon` |
 | `P0-MECH-03` | P0 | prefix reconstruction and conditional probe gain | PARTIAL: recon losses exist; Synthetic dataset exists; probe/extractor missing | `tab:prefix`, `fig:prefix-refinement` |
 | `P0-MECH-04` | P0 | boundary F1, delay, false-change rate | PARTIAL: Synthetic boundary labels exist; evaluator missing | `tab:temporal-robustness`, `fig:spliced-trajectory` |
-| `P0-MECH-05` | P0 | revisitation no/hard/soft far negatives | PARTIAL: far-negative flag exists; revisitation task/extractor missing | `tab:temporal-robustness` |
+| `P0-MECH-05` | P0 | revisitation no/hard/soft far negatives | PARTIAL: same-code no/hard/soft sampler implemented with episode masks; revisitation task/extractor missing | `tab:temporal-robustness` |
 | `P0-COLL-01` | P0 | no VC, variance-only, covariance-only, smooth-only, global TopK | PARTIAL: config flags exist; result extraction incomplete | `tab:collapse`, `fig:collapse-dashboard` |
 | `P0-MEM-01` | P0 | key-door / inventory memory sweep | MISSING: task scripts not wired | `fig:horizon-sweep`, `tab:main-results` |
 | `P0-ROB-01` | P0 | video background, moving distractor, camera shake, flicker | MISSING: DMC-GB2/distractor scripts not wired | `fig:nuisance-event`, `tab:temporal-robustness` |
 | `P0-BASE-01` | P0 | Dreamer reproduction audit | DEV PARTIAL: Breakout seed 1 only, best-checkpoint/3 eval episodes | `tab:backbone-reproduction` |
 | `P0-BASE-02` | P0 | larger-flat parameter/FLOPs matched controls | PARTIAL: `larger_flat_param` implemented/searchable; FLOPs-matched control deferred P1 | `tab:matched-controls` |
 | `P0-BASE-03` | P0 | Harmony, DyMo, SGF-flat, flat-SAE, flat-MH, Matryoshka, recon-only | PARTIAL: same-code `flat_mh`, `flat_sae`, `sgf_style_flat_same_code`, `recon_only_hierarchy` implemented; paper-final runs missing | `tab:baselines`, `tab:nearest-method-matrix` |
-| `P0-BASE-04` | P0 | T-SAE-style, dense-MH, no-L_temp, no-L_vc | PARTIAL: `dense_multistride`, `hts_no_temp`, `hts_no_vc` expressible by flags; runs pending | `tab:ablation-plan`, `tab:collapse` |
+| `P0-BASE-04` | P0 | T-SAE-style, dense-MH, no-L_hier, no-L_sdyn, no-L_temp, no-L_vc | PARTIAL: `dense_multistride_no_sparse`, `hts_no_hier`, `hts_no_sdyn`, `hts_no_temp`, `hts_no_vc` configs exist; runs pending | `tab:ablation-plan`, `tab:collapse` |
 | `P0-OFF-01` | P0 | fixed-buffer diagnosis | PARTIAL: Synthetic dataset generator done; evaluator missing | `tab:offline-diagnosis` |
 | `P0-COMP-01` | P0 | params, active dims, FLOPs/update, memory, wall-clock, latency | PARTIAL: params/runtime/memory partially logged; FLOPs/latency missing | `tab:compute`, `fig:compute-pareto` |
 | `P1-BASE-01` | P1 | THICK and CW-VAE/MTS3 | NOT STARTED | `tab:nearest-method-matrix` |
@@ -172,7 +172,7 @@ When a run finishes:
 - Required P1 baselines still need repo/env setup except EAWM, which is partially
   available locally.
 - Same-code `SGF-style flat`, `flat_mh`, `flat_sae`, `larger_flat_param`,
-  `recon_only_hierarchy`, `matryoshka_only`, `dense_multistride`, `hts_no_temp`,
-  and `hts_no_vc` have code/config paths. They still need paper-final runs and
+  `recon_only_hierarchy`, `matryoshka_only`, `dense_multistride_no_sparse`,
+  `hts_no_hier`, `hts_no_sdyn`, `hts_no_temp`, and `hts_no_vc` have code/config paths. They still need paper-final runs and
   result extraction. `larger_flat_flops` and the Synthetic fixed-buffer evaluator
   remain unimplemented.

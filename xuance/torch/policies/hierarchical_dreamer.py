@@ -439,6 +439,7 @@ class SGFStyleFlatControl(nn.Module):
             projection_dim=projection_dim,
             projector_type="none",
             temporal_mode="none",
+            far_negative_mode="none",
             positive_stride=1,
             temperature=0.1,
             std_target=std_target,
@@ -494,6 +495,7 @@ class TemporalContrastiveVICReg(nn.Module):
         projection_dim: int,
         projector_type: str,
         temporal_mode: str,
+        far_negative_mode: str,
         positive_stride: int,
         temperature: float,
         std_target: float,
@@ -503,6 +505,7 @@ class TemporalContrastiveVICReg(nn.Module):
     ):
         super().__init__()
         self.temporal_mode = temporal_mode
+        self.far_negative_mode = far_negative_mode
         self.positive_stride = positive_stride
         self.temperature = temperature
         self.std_target = std_target
@@ -530,20 +533,86 @@ class TemporalContrastiveVICReg(nn.Module):
         assert n == m
         return matrix.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
 
-    def _temporal_contrastive_loss(self, projections: Tensor) -> Tensor:
+    def _valid_temporal_pairs(self, projections: Tensor, episode_starts: Tensor | None) -> tuple[Tensor, Tensor, Tensor]:
+        stride = self.positive_stride
+        valid = torch.ones(projections.shape[:2], dtype=torch.bool, device=projections.device)
+        if episode_starts is not None:
+            starts = episode_starts.bool()
+            for offset in range(1, stride + 1):
+                valid[:-stride] &= ~starts[offset:projections.shape[0] - stride + offset]
+        valid = valid[:-stride]
+        times = torch.arange(projections.shape[0] - stride, device=projections.device)[:, None].expand_as(valid)
+        batches = torch.arange(projections.shape[1], device=projections.device)[None, :].expand_as(valid)
+        return valid, times, batches
+
+    def _same_episode_matrix(
+        self,
+        anchor_times: Tensor,
+        anchor_batches: Tensor,
+        candidate_times: Tensor,
+        candidate_batches: Tensor,
+        episode_starts: Tensor | None,
+    ) -> Tensor:
+        same_batch = anchor_batches[:, None] == candidate_batches[None, :]
+        if episode_starts is None:
+            return same_batch
+        segment_ids = episode_starts.bool().cumsum(dim=0)
+        anchor_segments = segment_ids[anchor_times, anchor_batches]
+        candidate_segments = segment_ids[candidate_times, candidate_batches]
+        return same_batch & (anchor_segments[:, None] == candidate_segments[None, :])
+
+    def _temporal_contrastive_loss(self, projections: Tensor, episode_starts: Tensor | None = None) -> Tuple[Tensor, dict]:
         stride = self.positive_stride
         if projections.shape[0] <= stride:
-            return projections.new_zeros(())
-        anchors = projections[:-stride].reshape(-1, projections.shape[-1])
-        positives = projections[stride:].reshape(-1, projections.shape[-1])
+            return projections.new_zeros(()), {}
+        valid, times, batches = self._valid_temporal_pairs(projections, episode_starts)
+        if valid.sum() <= 1:
+            return projections.new_zeros(()), {}
+        anchors = projections[:-stride][valid]
+        positives = projections[stride:][valid]
         if anchors.shape[0] <= 1:
-            return projections.new_zeros(())
+            return projections.new_zeros(()), {}
         anchors = F.normalize(anchors, dim=-1)
         positives = F.normalize(positives, dim=-1)
+
+        if self.far_negative_mode == "none":
+            loss = (anchors - positives).pow(2).sum(dim=-1).mean()
+            return loss, {
+                "hierarchical_latent/temp_valid_pairs": valid.sum().detach(),
+                "hierarchical_latent/temp_far_negative_count": projections.new_zeros(()),
+            }
+
         logits = anchors @ positives.transpose(0, 1)
         logits = logits / self.temperature
         labels = torch.arange(logits.shape[0], device=logits.device)
-        return F.cross_entropy(logits, labels)
+        anchor_times = times[valid]
+        anchor_batches = batches[valid]
+        candidate_times = anchor_times + stride
+        candidate_batches = anchor_batches
+        same_episode = self._same_episode_matrix(
+            anchor_times, anchor_batches, candidate_times, candidate_batches, episode_starts
+        )
+        temporal_distance = (candidate_times[None, :] - anchor_times[:, None]).abs()
+        far_same_episode = same_episode & (temporal_distance >= max(2 * stride, stride + 1))
+        near_same_episode = same_episode & (temporal_distance < max(2 * stride, stride + 1))
+        diagonal = torch.eye(logits.shape[0], dtype=torch.bool, device=logits.device)
+        near_same_episode = near_same_episode & ~diagonal
+        if self.far_negative_mode == "hard":
+            logits = logits.masked_fill(near_same_episode, -1e9)
+        elif self.far_negative_mode == "soft":
+            logits = logits.masked_fill(near_same_episode, -1e9)
+            soft_adjustment = torch.zeros_like(logits)
+            soft_adjustment = soft_adjustment.masked_fill(
+                far_same_episode, -torch.log(torch.as_tensor(2.0, device=logits.device))
+            )
+            logits = logits + soft_adjustment
+        else:
+            raise ValueError("far_negative_mode must be one of {none, hard, soft}.")
+        return F.cross_entropy(logits, labels), {
+            "hierarchical_latent/temp_valid_pairs": valid.sum().detach(),
+            "hierarchical_latent/temp_far_negative_count": far_same_episode.float().sum().detach(),
+            "hierarchical_latent/temp_near_same_episode_masked": near_same_episode.float().sum().detach(),
+        }
 
     def _vicreg_loss(self, projections: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         flat = projections.reshape(-1, projections.shape[-1])
@@ -575,14 +644,16 @@ class TemporalContrastiveVICReg(nn.Module):
             return projections.new_zeros(())
         return (projections[stride:] - projections[:-stride]).pow(2).mean()
 
-    def forward(self, coarse_head: Tensor) -> Tuple[Tensor, Tensor, dict[str, Tensor]]:
+    def forward(self, coarse_head: Tensor, episode_starts: Tensor | None = None) -> Tuple[Tensor, Tensor, dict[str, Tensor]]:
         projections = self.projector(coarse_head)
         if self.temporal_mode == "none":
             temporal_loss = projections.new_zeros(())
+            contrastive_info = {}
         elif self.temporal_mode == "smooth":
             temporal_loss = self._smoothness_loss(projections)
+            contrastive_info = {}
         elif self.temporal_mode == "contrastive":
-            temporal_loss = self._temporal_contrastive_loss(projections)
+            temporal_loss, contrastive_info = self._temporal_contrastive_loss(projections, episode_starts)
         else:
             raise ValueError("temporal_consistency.mode must be one of {none, smooth, contrastive}.")
         vc_loss, variance_loss, covariance_loss = self._vicreg_loss(projections)
@@ -600,6 +671,10 @@ class TemporalContrastiveVICReg(nn.Module):
             "hierarchical_latent/coarse_projection_std": projections.reshape(-1, projections.shape[-1]).std(
                 dim=0, unbiased=False
             ).mean().detach(),
+            "hierarchical_latent/far_negative_mode_none": projections.new_zeros(()) + float(self.far_negative_mode == "none"),
+            "hierarchical_latent/far_negative_mode_hard": projections.new_zeros(()) + float(self.far_negative_mode == "hard"),
+            "hierarchical_latent/far_negative_mode_soft": projections.new_zeros(()) + float(self.far_negative_mode == "soft"),
+            **contrastive_info,
         }
         return temporal_loss, vc_loss, info
 
@@ -689,6 +764,7 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             projection_dim=latent_config.temporal_consistency.projection_dim,
             projector_type=latent_config.temporal_consistency.projector_type,
             temporal_mode=latent_config.temporal_consistency.mode,
+            far_negative_mode=latent_config.temporal_consistency.far_negative_mode,
             positive_stride=latent_config.temporal_consistency.positive_stride,
             temperature=latent_config.temporal_consistency.temperature,
             std_target=latent_config.variance_covariance.std_target,
@@ -777,7 +853,12 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             list(self.temporal_vicreg.parameters())
         )
 
-    def apply_hierarchical_latent(self, recurrent_states: Tensor, actions: Tensor) -> Tuple[Tensor, Tensor]:
+    def apply_hierarchical_latent(
+        self,
+        recurrent_states: Tensor,
+        actions: Tensor,
+        episode_starts: Tensor | None = None,
+    ) -> Tuple[Tensor, Tensor]:
         if not self.use_hierarchical_latent or not self.hierarchy_training_active:
             zero = recurrent_states.new_zeros(())
             self.latest_hierarchical_recon_loss = zero
@@ -809,7 +890,7 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             sparse_heads, actions, recurrent_states
         )
         self.latest_sparse_dynamics_loss = sparse_dynamics_loss
-        temporal_loss, vicreg_loss, regularizer_info = self.temporal_vicreg(sparse_heads[..., 0, :])
+        temporal_loss, vicreg_loss, regularizer_info = self.temporal_vicreg(sparse_heads[..., 0, :], episode_starts)
         self.latest_temporal_contrastive_loss = temporal_loss
         self.latest_vicreg_loss = vicreg_loss
         sparsity_loss_by_level = (sparse_heads.abs() * self.sparsity_gammas).mean(dim=(0, 1, 3))
@@ -990,7 +1071,7 @@ class HierarchicalDreamerPolicy(DreamerV3Policy):
             posteriors[i] = posterior
             posteriors_logits[i] = posterior_logits
 
-        recurrent_states, _ = self.apply_hierarchical_latent(recurrent_states, acts)
+        recurrent_states, _ = self.apply_hierarchical_latent(recurrent_states, acts, is_first)
         latent_states = torch.cat((posteriors.view(*posteriors.shape[:-2], -1), recurrent_states), -1)
 
         reconstructed_obs = self.world_model.observation_model(latent_states)

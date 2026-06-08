@@ -156,7 +156,8 @@ The updated scope locks these definitions:
 | `larger_flat_flops` | P1 TODO | Match FLOPs/update within `5%`. |
 | `recon_only_hierarchy` | READY BY FLAGS | Dense/unconstrained multi-head prefix reconstruction only. |
 | `matryoshka_only` | PARTIAL BY FLAGS | Sparse levels + prefix reconstruction + TopK; turn off dynamics, temporal, VC. |
-| `dense_multistride_core` | READY BY FLAGS | Keep levels/prefixes/strides; turn off TopK/L1, temporal, VC, and sparsity loss. |
+| `dense_multistride_no_sparse` | READY BY FLAGS | Keep levels/prefixes/strides, action-subsequence predictors, temporal loss, and VC; turn off only TopK/L1 and sparsity loss. |
+| `dense_multistride_core` | COMPATIBILITY ALIAS | Alias config for `dense_multistride_no_sparse`; do not report as a separate condition. |
 | `hts_no_temp` | READY BY FLAGS | Full HTS-WM with temporal loss disabled. |
 | `hts_no_vc` | READY BY FLAGS | Full HTS-WM with VC disabled. |
 | `hts_full` | READY | Full current HTS-WM. |

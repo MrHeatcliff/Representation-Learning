@@ -22,6 +22,7 @@ SEQ_LEN="${SEQ_LEN:-64}"
 PARALLELS="${PARALLELS:-1}"
 BENCHMARK="${BENCHMARK:-1}"
 TEST_EPISODE="${TEST_EPISODE:-100}"
+INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE:-20}"
 CHECKPOINT_RULE="${CHECKPOINT_RULE:-final}"
 RUN_GROUP="${RUN_GROUP:-paper_final_atari100k_$(date +%Y%m%d_%H%M%S)}"
 RUN_LOG_ROOT="${RUN_LOG_ROOT:-${REPO_ROOT}/logs/training_scripts/${RUN_GROUP}}"
@@ -57,6 +58,7 @@ run_dreamer() {
       --parallels "${PARALLELS}" \
       --benchmark "${BENCHMARK}" \
       --test-episode "${TEST_EPISODE}" \
+      --intermediate-test-episode "${INTERMEDIATE_TEST_EPISODE}" \
       --checkpoint-rule "${CHECKPOINT_RULE}" \
       --log-dir "logs/paper-final/dreamer-v3/${ROM_NAME}/seed${seed}/" \
       --model-dir "models/paper-final/dreamer-v3/${ROM_NAME}/seed${seed}/"
@@ -83,6 +85,7 @@ run_htswm() {
   PARALLELS="${PARALLELS}" \
   BENCHMARK="${BENCHMARK}" \
   TEST_EPISODE="${TEST_EPISODE}" \
+  INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
   PYTHON_BIN="${PYTHON_BIN}" \
   LOG_DIR="logs/paper-final/hts-wm/${ROM_NAME}/seed${seed}/" \
@@ -110,6 +113,7 @@ run_harmony() {
   PARALLELS="${PARALLELS}" \
   BENCHMARK="${BENCHMARK}" \
   TEST_EPISODE="${TEST_EPISODE}" \
+  INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
   PYTHON_BIN="${PYTHON_BIN}" \
   LOG_DIR="logs/paper-final/harmonydream/${ROM_NAME}/seed${seed}/" \
@@ -137,6 +141,7 @@ run_tsae() {
   PARALLELS="${PARALLELS}" \
   BENCHMARK="${BENCHMARK}" \
   TEST_EPISODE="${TEST_EPISODE}" \
+  INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
   PYTHON_BIN="${PYTHON_BIN}" \
   LOG_DIR="logs/paper-final/tsae-style/${ROM_NAME}/seed${seed}/" \
@@ -151,6 +156,7 @@ echo "Seeds: ${SEEDS}"
 echo "Environment: ${ENV_ID}"
 echo "Checkpoint rule: ${CHECKPOINT_RULE}"
 echo "Test episodes: ${TEST_EPISODE}"
+echo "Intermediate test episodes: ${INTERMEDIATE_TEST_EPISODE}"
 echo "Logs: ${RUN_LOG_ROOT}"
 
 IFS=',' read -ra seed_array <<< "${SEEDS}"
