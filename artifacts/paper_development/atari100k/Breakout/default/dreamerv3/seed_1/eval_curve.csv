@@ -1,0 +1,7 @@
+experiment_id,suite,task,condition,method,seed,checkpoint_path,global_step,env_steps,agent_actions,frames,action_repeat,optimizer_updates,eval_episodes,metric_name,metric_value,raw_or_normalized,config_hash,code_commit,wall_clock_seconds
+paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,2500,2500,2500,10000,4,1476,3,raw_return_mean,0.6666666666666666,raw,741f30b17a9a49ae,961c6108a7fa40e4de08045d28e17297e052e34f,1183.552
+paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,2500,2500,2500,10000,4,1476,3,raw_return_std,0.9428090415820634,raw,741f30b17a9a49ae,961c6108a7fa40e4de08045d28e17297e052e34f,1183.552
+paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,2500,2500,2500,10000,4,1476,3,hns_mean,-3.5879629629629624,normalized,741f30b17a9a49ae,961c6108a7fa40e4de08045d28e17297e052e34f,1183.552
+paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,5000,5000,5000,20000,4,3976,3,raw_return_mean,0.0,raw,741f30b17a9a49ae,961c6108a7fa40e4de08045d28e17297e052e34f,2900.657
+paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,5000,5000,5000,20000,4,3976,3,raw_return_std,0.0,raw,741f30b17a9a49ae,961c6108a7fa40e4de08045d28e17297e052e34f,2900.657
+paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,5000,5000,5000,20000,4,3976,3,hns_mean,-5.902777777777778,normalized,741f30b17a9a49ae,961c6108a7fa40e4de08045d28e17297e052e34f,2900.657

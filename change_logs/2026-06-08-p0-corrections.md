@@ -6,7 +6,7 @@ Addressed the paper-lock P0 corrections before allowing paper-final runs.
 
 ## Changes
 
-- Standardized same-code XuanCe `REPLAY_RATIO` defaults to `1` in ablation and XuanCe HarmonyDream launch scripts.
+- Standardized same-code XuanCe `REPLAY_RATIO` defaults to `0.125`, matching the DreamerV3 paper replay budget under XuanCe's minibatch-update semantics.
 - Added true no/hard/soft far-negative handling for HTS temporal contrastive loss with episode-boundary masks from `is_first`.
 - Fixed soft far-negative mode to downweight far same-trajectory negatives instead of treating the config as a tracking-only flag.
 - Preserved `flat_sae` as one flat dictionary with width `192` and TopK budget `48`.
@@ -15,6 +15,13 @@ Addressed the paper-lock P0 corrections before allowing paper-final runs.
 - Added generated configs for `hts_no_hier` and `hts_no_sdyn`.
 - Updated markdown guidance to remove stale `REPLAY_RATIO=0.25` paper-final commands and stale far-negative TODO language.
 - Added a paste-ready Breakout P0 smoke queue under `examples/hierarchical_dreamer/paper_smoke_runs/`.
+- Fixed direct-script imports for DreamerV3 and Hierarchical Atari entrypoints by adding the repository root to `sys.path` before importing shared paper artifact helpers.
+- Added optional W&B eval video upload for Atari entrypoints; final eval videos are enabled by default in smoke and paper-final launchers and appear as `Videos_Test`.
+- Added W&B aliases `eval/episode_return_mean`, `eval/episode_return_std`, `eval/episode_return_min`, and `eval/episode_return_max` for return curves.
+- Added `--eval-protocol {periodic,final,train_only}` to Atari entrypoints. Smoke and paper-final launchers now default to `final`, which trains uninterrupted and runs only one final separate eval/video.
+- Added W&B aliases `train/episode_return` and `train/episode_length` when training episodes finish, matching the DreamerV3 Atari100K paper-style learning curve source.
+- Refined training episode logging for Dreamer-style curves: added `train/agent_step`, `train/env_frame`, `train/action_repeat`, changed step reward to `train/episode_reward_mean`, and wrote local `train_episode_returns.csv`.
+- Added `scripts/aggregate_train_episode_curves.py` to bin episode returns per seed over environment frames before computing mean/std across seeds.
 
 ## Validation
 

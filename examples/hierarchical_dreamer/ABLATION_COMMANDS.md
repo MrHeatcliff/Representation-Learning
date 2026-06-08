@@ -87,7 +87,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
   --wandb-mode online \
   --wandb-run-name DreamerV3-baseline-breakout-seed1-100k \
   --running-steps 100000 \
-  --replay-ratio 1 \
+  --replay-ratio 0.125 \
   --batch-size 16 \
   --seq-len 64 \
   --benchmark 1
@@ -106,7 +106,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Baselines \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 examples/hierarchical_dreamer/train_ablation.sh
 ```
 
@@ -122,7 +122,7 @@ RUN_NAME=tsae-style-breakout-seed1-100k \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Baselines \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh
 ```
 
@@ -135,7 +135,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
 ENV_ID=ALE/Breakout-v5 \
 SEED=1 \
 DEVICE=cuda:0 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 RUNNING_STEPS=100000 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Baselines \
@@ -295,7 +295,7 @@ RUNNING_STEPS=100000
 
 # XuanCe replay_ratio is minibatch updates per agent step after start_training.
 # Canonical same-code value for Dreamer/HTS-WM ablations:
-REPLAY_RATIO=1
+REPLAY_RATIO=0.125
 ```
 
 Reference generate-and-launch pattern. Replace every placeholder before running:
@@ -392,7 +392,7 @@ export DEVICE=cuda:0
 export WANDB_MODE=online
 export PROJECT_NAME=HTS-WM-Baselines
 export RUNNING_STEPS=100000
-export REPLAY_RATIO=1
+export REPLAY_RATIO=0.125
 ```
 
 Run DreamerV3 anchor (DEV_DONE: Breakout seed 1, W&B `cssk65zq`):
@@ -700,7 +700,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -721,7 +721,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -742,7 +742,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -785,7 +785,7 @@ Same-code XuanCe command:
 ENV_ID=ALE/Breakout-v5 \
 SEED=1 \
 DEVICE=cuda:0 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 RUN_NAME=XuanCe-HarmonyDream-Breakout-v5-seed1-100000steps-rr1 \
 examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
 ```
@@ -942,7 +942,7 @@ reported as approximations rather than as those external methods.
 Runnable now for Atari100K-style single-game XuanCe runs:
 
 ```bash
-ENV_ID=ALE/Breakout-v5 RUNNING_STEPS=100000 REPLAY_RATIO=1 \
+ENV_ID=ALE/Breakout-v5 RUNNING_STEPS=100000 REPLAY_RATIO=0.125 \
 CONFIG_FILE=config/generated_configs/full_htswm.yaml \
 RUN_NAME=tab-protocol-atari-breakout-full \
 examples/hierarchical_dreamer/train_ablation.sh

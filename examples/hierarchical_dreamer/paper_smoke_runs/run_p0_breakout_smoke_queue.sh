@@ -11,7 +11,7 @@ export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-P0-Smoke}"
 export RUNNING_STEPS="${RUNNING_STEPS:-10000}"
 export EVAL_INTERVAL="${EVAL_INTERVAL:-2500}"
-export REPLAY_RATIO="${REPLAY_RATIO:-1}"
+export REPLAY_RATIO="${REPLAY_RATIO:-0.125}"
 export BUFFER_SIZE="${BUFFER_SIZE:-1000000}"
 export START_TRAINING="${START_TRAINING:-1024}"
 export BATCH_SIZE="${BATCH_SIZE:-16}"
@@ -19,8 +19,11 @@ export SEQ_LEN="${SEQ_LEN:-64}"
 export PARALLELS="${PARALLELS:-1}"
 export BENCHMARK="${BENCHMARK:-1}"
 export CHECKPOINT_RULE="${CHECKPOINT_RULE:-final}"
+export EVAL_PROTOCOL="${EVAL_PROTOCOL:-final}"
 export TEST_EPISODE="${TEST_EPISODE:-3}"
 export INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE:-3}"
+export RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO:-true}"
+export RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO:-false}"
 export SMOKE_TAG="${SMOKE_TAG:-p0-smoke-10k}"
 
 run_dreamer() {
@@ -45,7 +48,10 @@ run_dreamer() {
     --benchmark "${BENCHMARK}" \
     --test-episode "${TEST_EPISODE}" \
     --intermediate-test-episode "${INTERMEDIATE_TEST_EPISODE}" \
+    --render-eval-video "${RENDER_EVAL_VIDEO}" \
+    --render-intermediate-video "${RENDER_INTERMEDIATE_VIDEO}" \
     --checkpoint-rule "${CHECKPOINT_RULE}" \
+    --eval-protocol "${EVAL_PROTOCOL}" \
     --log-dir "logs/p0_smoke/${run_name}/" \
     --model-dir "models/p0_smoke/${run_name}/"
 }
@@ -72,8 +78,11 @@ run_hts_config() {
   PARALLELS="${PARALLELS}" \
   BENCHMARK="${BENCHMARK}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
+  EVAL_PROTOCOL="${EVAL_PROTOCOL}" \
   TEST_EPISODE="${TEST_EPISODE}" \
   INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
+  RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO}" \
+  RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO}" \
   LOG_DIR="logs/p0_smoke/${run_name}/" \
   MODEL_DIR="models/p0_smoke/${run_name}/" \
   examples/hierarchical_dreamer/train_ablation.sh
@@ -98,7 +107,10 @@ run_xuance_harmony() {
   PARALLELS="${PARALLELS}" \
   BENCHMARK="${BENCHMARK}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
+  EVAL_PROTOCOL="${EVAL_PROTOCOL}" \
   TEST_EPISODE="${TEST_EPISODE}" \
+  RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO}" \
+  RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO}" \
   LOG_DIR="logs/p0_smoke/${run_name}/" \
   MODEL_DIR="models/p0_smoke/${run_name}/" \
   examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
@@ -123,7 +135,10 @@ run_tsae_style() {
   PARALLELS="${PARALLELS}" \
   BENCHMARK="${BENCHMARK}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
+  EVAL_PROTOCOL="${EVAL_PROTOCOL}" \
   TEST_EPISODE="${TEST_EPISODE}" \
+  RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO}" \
+  RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO}" \
   LOG_DIR="logs/p0_smoke/${run_name}/" \
   MODEL_DIR="models/p0_smoke/${run_name}/" \
   examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh

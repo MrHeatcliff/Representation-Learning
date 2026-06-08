@@ -12,16 +12,16 @@ learning-curve manuscript.
 | Config mechanism | YAML loaded by `load_yaml`, CLI overrides via `recursive_dict_update`, then `argparse.Namespace` |
 | Logging backend | W&B or TensorBoard via XuanCe agent logger; W&B is used for current paper runs |
 | Checkpoint format | `Agent.save_model(...)` writes learner checkpoints under configured model dir |
-| Evaluation hooks | Atari scripts evaluate every `eval_interval`; now also write CSV artifacts |
+| Evaluation hooks | Atari scripts support `--eval-protocol {periodic,final,train_only}`; paper/default launcher uses uninterrupted training plus final eval |
 | Available env deps in `.venv` | `gymnasium`, `numpy`, `yaml` |
 | Missing deps in `.venv` | `minihack`, `nle`, `rliable`, `matplotlib`, `pandas` |
 | Manuscript file | `paper.txt`; verified learning-curve labels are present |
 | Existing runs | W&B summaries/final JSON exist for some Breakout dev runs, but old runs lack unified `eval_curve.csv` |
-| Main conflict fixed | Periodic eval and final eval are now separate: `INTERMEDIATE_TEST_EPISODE` vs `TEST_EPISODE` |
+| Main conflict fixed | Periodic eval is no longer required for paper runs; final eval/video is separate from training-episode return logging |
 
 ## Artifact Schema
 
-New Atari runs write:
+New Atari final-eval runs write:
 
 ```text
 artifacts/<experiment_id>/<suite>/<task>/<condition>/<method>/seed_<seed>/
@@ -40,8 +40,32 @@ optimizer_updates, eval_episodes, metric_name, metric_value,
 raw_or_normalized, config_hash, code_commit, wall_clock_seconds
 ```
 
-For Atari, both raw return and HNS are stored when the task has a normalization
-reference.
+For paper-aligned Atari learning curves, use training episode return logs from
+W&B (`train/episode_return`) or local `train_episode_returns.csv` over
+environment frames. Separate final eval artifacts are used for final score
+tables and videos. For development runs that explicitly set
+`EVAL_PROTOCOL=periodic`, `eval_curve.csv` can also be aggregated. For Atari,
+both raw return and HNS are stored when the task has a normalization reference.
+
+Dreamer-style curve aggregation:
+
+```text
+1. For each seed, bin completed training episodes by `env_frame`.
+2. Compute mean episode return inside each seed/bin.
+3. Compute mean and std across seeds per bin.
+4. Use 30 bins over 0..400K env frames for Atari100K-style plots.
+```
+
+Aggregate local training episode CSVs:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+.venv/bin/python examples/hierarchical_dreamer/scripts/aggregate_train_episode_curves.py \
+  --input-root logs \
+  --output artifacts/curves/train_episode_return_curves.csv \
+  --bins 30 \
+  --max-env-frames 400000
+```
 
 ## Implemented Scripts
 
@@ -51,7 +75,8 @@ reference.
 | `scripts/run_periodic_eval.py` | PARTIAL: Atari integrated; Synthetic points to evaluator |
 | `scripts/evaluate_synthetic_checkpoints.py` | SMOKE ONLY: structural placeholder metrics; model checkpoint integration pending |
 | `scripts/extract_keycorridor_milestones.py` | SCHEMA/DEPS CHECK ONLY: blocked on MiniHack/NLE/THICK wrapper |
-| `scripts/aggregate_learning_curves.py` | READY for CSV seed aggregation |
+| `scripts/aggregate_learning_curves.py` | READY for separate-eval CSV seed aggregation |
+| `scripts/aggregate_train_episode_curves.py` | READY for Dreamer-style training episode return curves |
 | `scripts/build_paper_figures.py` | SMOKE ONLY: minimal PDFs without plotting deps |
 | `scripts/build_paper_tables.py` | READY for final score/AUC/inventory CSVs |
 | `scripts/build_paper_manifest.py` | READY, but direct LaTeX label scan needs manuscript file |

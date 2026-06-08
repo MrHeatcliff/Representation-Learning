@@ -10,10 +10,12 @@ corrections.
 env: ALE/Breakout-v5
 seed: 1
 steps: 10K agent actions
-replay_ratio: 1
+replay_ratio: 0.125
 batch: 16 x 64
 eval_interval: 2500
 test_episode: 3
+final eval video: enabled
+eval protocol: final only, no periodic separate eval
 wandb project: HTS-WM-P0-Smoke
 ```
 
@@ -36,6 +38,22 @@ To make the smoke lighter:
 ```bash
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 RUNNING_STEPS=1000 EVAL_INTERVAL=500 DEVICE=cuda:1 \
+bash examples/hierarchical_dreamer/paper_smoke_runs/run_p0_breakout_smoke_queue.sh
+```
+
+To disable final eval GIF upload:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+RENDER_EVAL_VIDEO=false DEVICE=cuda:1 \
+bash examples/hierarchical_dreamer/paper_smoke_runs/run_p0_breakout_smoke_queue.sh
+```
+
+To restore the old development behavior with separate periodic eval:
+
+```bash
+cd /mnt/disk1/backup_user/dat.tt2/xuance
+EVAL_PROTOCOL=periodic DEVICE=cuda:1 \
 bash examples/hierarchical_dreamer/paper_smoke_runs/run_p0_breakout_smoke_queue.sh
 ```
 
@@ -65,6 +83,7 @@ run name:
 wandb URL:
 finished or failed:
 final/test episode reward mean:
+Videos_Test present on W&B: yes/no
 any traceback:
 ```
 

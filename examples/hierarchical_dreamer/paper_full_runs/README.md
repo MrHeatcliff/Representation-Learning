@@ -14,7 +14,7 @@ checkpoint_rule = final
 test_episode = 100
 batch_size = 16
 seq_len = 64
-replay_ratio = 1
+replay_ratio = 0.125
 ```
 
 ## Current Files

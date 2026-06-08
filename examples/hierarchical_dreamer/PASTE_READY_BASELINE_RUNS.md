@@ -101,7 +101,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -121,7 +121,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -141,7 +141,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -171,7 +171,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-P0-Ablations \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 CHECKPOINT_RULE=final \
 TEST_EPISODE=100 \
 examples/hierarchical_dreamer/train_ablation.sh
@@ -212,7 +212,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python
   --wandb-mode online \
   --wandb-run-name DreamerV3-baseline-breakout-seed1-100k \
   --running-steps 100000 \
-  --replay-ratio 1 \
+  --replay-ratio 0.125 \
   --batch-size 16 \
   --seq-len 64 \
   --benchmark 1
@@ -239,7 +239,7 @@ DEVICE=cuda:0 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Baselines \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 examples/hierarchical_dreamer/train_ablation.sh
 ```
 
@@ -255,7 +255,7 @@ RUN_NAME=tsae-style-breakout-seed1-100k \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Baselines \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 examples/hierarchical_dreamer/baselines/run_tsae_style_atari100k.sh
 ```
 
@@ -268,7 +268,7 @@ PYTHON_BIN=/mnt/disk1/backup_user/dat.tt2/xuance/.venv/bin/python \
 ENV_ID=ALE/Breakout-v5 \
 SEED=1 \
 DEVICE=cuda:0 \
-REPLAY_RATIO=1 \
+REPLAY_RATIO=0.125 \
 RUNNING_STEPS=100000 \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Baselines \

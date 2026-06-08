@@ -1,4 +1,6 @@
 import torch
+import csv
+import os
 from copy import deepcopy
 from xuance.common import List, Union, SequentialReplayBuffer, BaseCallback
 from xuance.environment import DummyVecEnv, SubprocVecEnv
@@ -68,6 +70,45 @@ class DreamerV3Agent(OffPolicyAgent):
             np.zeros((self.train_envs.num_envs, )),  # truncs
             np.ones((self.train_envs.num_envs, ))  # is_first
         ]
+
+    def _log_train_episode_csv(
+        self,
+        env_id: int,
+        episode_return: float,
+        episode_length: int,
+        agent_step: int,
+    ) -> None:
+        action_repeat = int(getattr(self.config, "frame_skip", getattr(self.config, "action_repeat", 1)))
+        env_frame = int(agent_step * action_repeat)
+        path = os.path.join(os.getcwd(), self.log_dir, "train_episode_returns.csv")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        file_exists = os.path.exists(path)
+        with open(path, "a", newline="") as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=[
+                    "agent_step",
+                    "env_frame",
+                    "action_repeat",
+                    "env_id",
+                    "episode_index",
+                    "episode_return",
+                    "episode_length",
+                    "episode_reward_mean",
+                ],
+            )
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({
+                "agent_step": agent_step,
+                "env_frame": env_frame,
+                "action_repeat": action_repeat,
+                "env_id": env_id,
+                "episode_index": int(self.current_episode[env_id]),
+                "episode_return": episode_return,
+                "episode_length": episode_length,
+                "episode_reward_mean": episode_return / max(episode_length, 1),
+            })
 
     def _build_representation(self, representation_key: str,
                               input_space: Optional[gym.spaces.Space],
@@ -189,10 +230,22 @@ class DreamerV3Agent(OffPolicyAgent):
                         self.ret_rms.update(self.returns[i:i + 1])
                         self.returns[i] = 0.0
                         self.current_episode[i] += 1
+                        episode_return = float(infos[i]["episode_score"])
+                        episode_length = int(infos[i]["episode_step"])
+                        agent_step = int(self.current_step)
+                        action_repeat = int(getattr(self.config, "frame_skip", getattr(self.config, "action_repeat", 1)))
+                        env_frame = agent_step * action_repeat
+                        self._log_train_episode_csv(i, episode_return, episode_length, agent_step)
                         if self.use_wandb:
                             episode_info = {
-                                f"Episode-Steps/rank_{self.rank}/env-{i}": infos[i]["episode_step"],
-                                f"Train-Episode-Rewards/rank_{self.rank}/env-{i}": infos[i]["episode_score"]
+                                f"Episode-Steps/rank_{self.rank}/env-{i}": episode_length,
+                                f"Train-Episode-Rewards/rank_{self.rank}/env-{i}": episode_return,
+                                "train/episode_return": episode_return,
+                                "train/episode_reward_mean": episode_return / max(episode_length, 1),
+                                "train/episode_length": episode_length,
+                                "train/agent_step": agent_step,
+                                "train/env_frame": env_frame,
+                                "train/action_repeat": action_repeat,
                             }
                         else:
                             episode_info = {
@@ -303,7 +356,12 @@ class DreamerV3Agent(OffPolicyAgent):
 
         test_info = {
             "Test-Episode-Rewards/Mean-Score": np.mean(scores),
-            "Test-Episode-Rewards/Std-Score": np.std(scores)
+            "Test-Episode-Rewards/Std-Score": np.std(scores),
+            "eval/episode_return_mean": np.mean(scores),
+            "eval/episode_return_std": np.std(scores),
+            "eval/episode_return_min": np.min(scores),
+            "eval/episode_return_max": np.max(scores),
+            "eval/episode_reward_mean": np.mean(scores),
         }
         self.log_infos(test_info, self.current_step)
 
@@ -312,4 +370,3 @@ class DreamerV3Agent(OffPolicyAgent):
 
 
         return scores
-

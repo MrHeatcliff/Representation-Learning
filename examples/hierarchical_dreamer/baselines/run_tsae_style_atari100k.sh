@@ -13,7 +13,7 @@ WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Baselines}"
 RUNNING_STEPS="${RUNNING_STEPS:-100000}"
 EVAL_INTERVAL="${EVAL_INTERVAL:-2000}"
-REPLAY_RATIO="${REPLAY_RATIO:-1}"
+REPLAY_RATIO="${REPLAY_RATIO:-0.125}"
 BUFFER_SIZE="${BUFFER_SIZE:-1000000}"
 START_TRAINING="${START_TRAINING:-1024}"
 BATCH_SIZE="${BATCH_SIZE:-16}"
@@ -22,6 +22,9 @@ PARALLELS="${PARALLELS:-1}"
 BENCHMARK="${BENCHMARK:-1}"
 TEST_EPISODE="${TEST_EPISODE:-3}"
 CHECKPOINT_RULE="${CHECKPOINT_RULE:-best}"
+EVAL_PROTOCOL="${EVAL_PROTOCOL:-final}"
+RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO:-false}"
+RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO:-false}"
 
 BASE_CONFIG="${BASE_CONFIG:-examples/hierarchical_dreamer/config/atari100k_two_phase.yaml}"
 RUN_NAME="${RUN_NAME:-tsae-style-atari100k-${ROM_NAME}-seed${SEED}}"
@@ -80,7 +83,10 @@ mkdir -p "$(dirname "${GENERATED_CONFIG}")" "${REPO_ROOT}/${LOG_DIR}" "${REPO_RO
     --parallels "${PARALLELS}" \
     --benchmark "${BENCHMARK}" \
     --test-episode "${TEST_EPISODE}" \
+    --render-eval-video "${RENDER_EVAL_VIDEO}" \
+    --render-intermediate-video "${RENDER_INTERMEDIATE_VIDEO}" \
     --checkpoint-rule "${CHECKPOINT_RULE}" \
+    --eval-protocol "${EVAL_PROTOCOL}" \
     --log-dir "${LOG_DIR}" \
     --model-dir "${MODEL_DIR}"
 ) 2>&1 | tee "${RUN_LOG_DIR}/${RUN_NAME}.log"

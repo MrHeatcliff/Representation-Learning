@@ -1,10 +1,16 @@
 import argparse
 import json
 import os
+import sys
 import time
 import numpy as np
 from copy import deepcopy
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from xuance.torch.utils.operations import set_seed
 from xuance.common import load_yaml, recursive_dict_update
 from xuance.environment import make_envs
@@ -83,6 +89,15 @@ def str2bool(value):
     raise argparse.ArgumentTypeError(f"Expected boolean value, got {value}.")
 
 
+def agent_test(agent, test_episodes, test_envs, close_envs=False, render_video=False):
+    previous_render = agent.render
+    agent.render = bool(render_video)
+    try:
+        return agent.test(test_episodes=test_episodes, test_envs=test_envs, close_envs=close_envs)
+    finally:
+        agent.render = previous_render
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Example of XuanCe: DreamerV3 for Atari.")
     parser.add_argument("--env-id", type=str, default="ALE/Breakout-v5")
@@ -97,10 +112,11 @@ def parse_args():
     parser.add_argument("--wandb-mode", type=str, default="online", choices=["online", "offline", "disabled"])
     parser.add_argument("--wandb-run-name", type=str, default=None)
 
-    # atari100k, ratio=1, gradient_step=100k
+    # XuanCe replay_ratio is minibatch updates per agent step after start_training.
+    # 0.125 gives about 12.5K updates over 100K agent steps with 16x64 batches.
     parser.add_argument("--running-steps", type=int, default=100_000)  # 100k
     parser.add_argument("--eval-interval", type=int, default=2_000)  # 50 logs
-    parser.add_argument("--replay-ratio", type=float, default=1)
+    parser.add_argument("--replay-ratio", type=float, default=0.125)
     parser.add_argument("--buffer-size", type=int, default=1_000_000)
     parser.add_argument("--start-training", type=int, default=1024)
     parser.add_argument("--batch-size", type=int, default=16)
@@ -113,6 +129,16 @@ def parse_args():
     parser.add_argument("--test-episode", type=int, default=None)
     parser.add_argument("--intermediate-test-episode", type=int, default=None)
     parser.add_argument("--checkpoint-rule", type=str, default="best", choices=["best", "final"])
+    parser.add_argument(
+        "--eval-protocol",
+        type=str,
+        default="periodic",
+        choices=["periodic", "final", "train_only"],
+        help="periodic runs separate eval during training; final trains uninterrupted then evals once; "
+             "train_only logs training episode returns without separate eval.",
+    )
+    parser.add_argument("--render-eval-video", type=str2bool, default=False)
+    parser.add_argument("--render-intermediate-video", type=str2bool, default=False)
     parser.add_argument("--artifact-root", type=str, default="artifacts")
     parser.add_argument("--experiment-id", type=str, default="paper_development")
     parser.add_argument("--suite", type=str, default="atari100k")
@@ -157,77 +183,121 @@ if __name__ == '__main__':
     for k, v in train_information.items():
         print(f"{k}: {v}")
 
+    eval_protocol = parser.eval_protocol
+    if eval_protocol == "periodic" and getattr(configs, "checkpoint_rule", "best") == "final":
+        eval_protocol = "final"
+
     if configs.benchmark:
-        configs_test = deepcopy(configs)
-        configs_test.parallels = configs_test.test_episode
-        test_envs = make_envs(configs_test)
+        if eval_protocol in ("final", "train_only"):
+            Agent.train(configs.running_steps // configs.parallels)
+            Agent.save_model(model_name="final_model.pth")
+            if eval_protocol == "train_only":
+                print("Finish training without separate evaluation.")
+            else:
+                configs_test = deepcopy(configs)
+                configs_test.parallels = configs_test.test_episode
+                configs_test.render = bool(parser.render_eval_video)
+                test_envs = make_envs(configs_test)
+                test_scores = agent_test(
+                    Agent, configs.test_episode, test_envs, close_envs=False,
+                    render_video=parser.render_eval_video,
+                )
+                final_scores_info = {"mean": np.mean(test_scores),
+                                     "std": np.std(test_scores),
+                                     "step": Agent.current_step,
+                                     "scores": test_scores}
+                print("Final Model Score: %.2f, std=%.2f" % (final_scores_info["mean"], final_scores_info["std"]))
+                write_eval_artifact(configs, final_scores_info["scores"], "final", "final_model.pth",
+                                    final_scores_info["step"])
+                write_eval_artifacts(
+                    artifact_output_dir, configs, method, parser.suite, parser.condition, final_scores_info["scores"],
+                    "final_model.pth", final_scores_info["step"], Agent.gradient_step, run_start_time, final=True,
+                )
+                test_envs.close()
+        else:
+            configs_test = deepcopy(configs)
+            configs_test.parallels = configs_test.test_episode
+            configs_test.render = bool(parser.render_eval_video or parser.render_intermediate_video)
+            test_envs = make_envs(configs_test)
 
+            train_steps = configs.running_steps // configs.parallels
+            eval_interval = configs.eval_interval // configs.parallels
+            test_episode = configs.test_episode
+            intermediate_test_episode = parser.intermediate_test_episode or test_episode
+            num_epoch = int(train_steps / eval_interval)
 
-        train_steps = configs.running_steps // configs.parallels
-        eval_interval = configs.eval_interval // configs.parallels
-        test_episode = configs.test_episode
-        intermediate_test_episode = parser.intermediate_test_episode or test_episode
-        num_epoch = int(train_steps / eval_interval)
-
-        checkpoint_rule = getattr(configs, "checkpoint_rule", "best")
-        if checkpoint_rule == "best":
-            test_scores = Agent.test(test_episodes=test_episode, test_envs=test_envs, close_envs=False)
-            Agent.save_model(model_name="best_model.pth")
-            write_eval_artifacts(
-                artifact_output_dir, configs, method, parser.suite, parser.condition, test_scores,
-                "best_model.pth", Agent.current_step, Agent.gradient_step, run_start_time, final=False,
-            )
-            best_scores_info = {"mean": np.mean(test_scores),
-                                "std": np.std(test_scores),
-                                "step": Agent.current_step,
-                                "scores": test_scores}
-            for i_epoch in range(num_epoch):
-                print("Epoch: %d/%d:" % (i_epoch, num_epoch))
-                Agent.train(eval_interval)
-                test_scores = Agent.test(test_episodes=intermediate_test_episode, test_envs=test_envs, close_envs=False)
+            checkpoint_rule = getattr(configs, "checkpoint_rule", "best")
+            if checkpoint_rule == "best":
+                test_scores = agent_test(
+                    Agent, test_episode, test_envs, close_envs=False,
+                    render_video=parser.render_intermediate_video,
+                )
+                Agent.save_model(model_name="best_model.pth")
                 write_eval_artifacts(
                     artifact_output_dir, configs, method, parser.suite, parser.condition, test_scores,
                     "best_model.pth", Agent.current_step, Agent.gradient_step, run_start_time, final=False,
                 )
+                best_scores_info = {"mean": np.mean(test_scores),
+                                    "std": np.std(test_scores),
+                                    "step": Agent.current_step,
+                                    "scores": test_scores}
+                for i_epoch in range(num_epoch):
+                    print("Epoch: %d/%d:" % (i_epoch, num_epoch))
+                    Agent.train(eval_interval)
+                    test_scores = agent_test(
+                        Agent, intermediate_test_episode, test_envs, close_envs=False,
+                        render_video=parser.render_intermediate_video,
+                    )
+                    write_eval_artifacts(
+                        artifact_output_dir, configs, method, parser.suite, parser.condition, test_scores,
+                        "best_model.pth", Agent.current_step, Agent.gradient_step, run_start_time, final=False,
+                    )
 
-                can_save = np.mean(test_scores) > best_scores_info["mean"]
-                can_save |= (abs(np.mean(test_scores) - best_scores_info["mean"]) < 1e-6
-                             and np.std(test_scores) < best_scores_info["std"])
-                if can_save:
-                    best_scores_info = {"mean": np.mean(test_scores),
-                                        "std": np.std(test_scores),
-                                        "step": Agent.current_step,
-                                        "scores": test_scores}
-                    # save best model
-                    Agent.save_model(model_name="best_model.pth")
-            print("Best Model Score: %.2f, std=%.2f" % (best_scores_info["mean"], best_scores_info["std"]))
-            write_eval_artifact(configs, best_scores_info["scores"], "best", "best_model.pth", best_scores_info["step"])
-            write_eval_artifacts(
-                artifact_output_dir, configs, method, parser.suite, parser.condition, best_scores_info["scores"],
-                "best_model.pth", best_scores_info["step"], Agent.gradient_step, run_start_time, final=True,
-            )
-        else:
-            for i_epoch in range(num_epoch):
-                print("Epoch: %d/%d:" % (i_epoch, num_epoch))
-                Agent.train(eval_interval)
-                test_scores = Agent.test(test_episodes=intermediate_test_episode, test_envs=test_envs, close_envs=False)
+                    can_save = np.mean(test_scores) > best_scores_info["mean"]
+                    can_save |= (abs(np.mean(test_scores) - best_scores_info["mean"]) < 1e-6
+                                 and np.std(test_scores) < best_scores_info["std"])
+                    if can_save:
+                        best_scores_info = {"mean": np.mean(test_scores),
+                                            "std": np.std(test_scores),
+                                            "step": Agent.current_step,
+                                            "scores": test_scores}
+                        Agent.save_model(model_name="best_model.pth")
+                print("Best Model Score: %.2f, std=%.2f" % (best_scores_info["mean"], best_scores_info["std"]))
+                write_eval_artifact(configs, best_scores_info["scores"], "best", "best_model.pth",
+                                    best_scores_info["step"])
                 write_eval_artifacts(
-                    artifact_output_dir, configs, method, parser.suite, parser.condition, test_scores,
-                    "periodic_checkpoint", Agent.current_step, Agent.gradient_step, run_start_time, final=False,
+                    artifact_output_dir, configs, method, parser.suite, parser.condition, best_scores_info["scores"],
+                    "best_model.pth", best_scores_info["step"], Agent.gradient_step, run_start_time, final=True,
                 )
-            Agent.save_model(model_name="final_model.pth")
-            test_scores = Agent.test(test_episodes=test_episode, test_envs=test_envs, close_envs=False)
-            final_scores_info = {"mean": np.mean(test_scores),
-                                 "std": np.std(test_scores),
-                                 "step": Agent.current_step,
-                                 "scores": test_scores}
-            print("Final Model Score: %.2f, std=%.2f" % (final_scores_info["mean"], final_scores_info["std"]))
-            write_eval_artifact(configs, final_scores_info["scores"], "final", "final_model.pth", final_scores_info["step"])
-            write_eval_artifacts(
-                artifact_output_dir, configs, method, parser.suite, parser.condition, final_scores_info["scores"],
-                "final_model.pth", final_scores_info["step"], Agent.gradient_step, run_start_time, final=True,
-            )
-        test_envs.close()
+            else:
+                for i_epoch in range(num_epoch):
+                    print("Epoch: %d/%d:" % (i_epoch, num_epoch))
+                    Agent.train(eval_interval)
+                    test_scores = agent_test(
+                        Agent, intermediate_test_episode, test_envs, close_envs=False,
+                        render_video=parser.render_intermediate_video,
+                    )
+                    write_eval_artifacts(
+                        artifact_output_dir, configs, method, parser.suite, parser.condition, test_scores,
+                        "periodic_checkpoint", Agent.current_step, Agent.gradient_step, run_start_time, final=False,
+                    )
+                Agent.save_model(model_name="final_model.pth")
+                test_scores = agent_test(
+                    Agent, test_episode, test_envs, close_envs=False,
+                    render_video=parser.render_eval_video,
+                )
+                final_scores_info = {"mean": np.mean(test_scores),
+                                     "std": np.std(test_scores),
+                                     "step": Agent.current_step,
+                                     "scores": test_scores}
+                print("Final Model Score: %.2f, std=%.2f" % (final_scores_info["mean"], final_scores_info["std"]))
+                write_eval_artifact(configs, final_scores_info["scores"], "final", "final_model.pth",
+                                    final_scores_info["step"])
+                write_eval_artifacts(
+                    artifact_output_dir, configs, method, parser.suite, parser.condition, final_scores_info["scores"],
+                    "final_model.pth", final_scores_info["step"], Agent.gradient_step, run_start_time, final=True,
+                )
+            test_envs.close()
     else:
         if configs.test:
             def env_fn():

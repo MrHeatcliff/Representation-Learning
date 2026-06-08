@@ -14,7 +14,7 @@ WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final}"
 RUNNING_STEPS="${RUNNING_STEPS:-100000}"
 EVAL_INTERVAL="${EVAL_INTERVAL:-2000}"
-REPLAY_RATIO="${REPLAY_RATIO:-1}"
+REPLAY_RATIO="${REPLAY_RATIO:-0.125}"
 BUFFER_SIZE="${BUFFER_SIZE:-1000000}"
 START_TRAINING="${START_TRAINING:-1024}"
 BATCH_SIZE="${BATCH_SIZE:-16}"
@@ -24,6 +24,9 @@ BENCHMARK="${BENCHMARK:-1}"
 TEST_EPISODE="${TEST_EPISODE:-100}"
 INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE:-20}"
 CHECKPOINT_RULE="${CHECKPOINT_RULE:-final}"
+EVAL_PROTOCOL="${EVAL_PROTOCOL:-final}"
+RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO:-true}"
+RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO:-false}"
 RUN_GROUP="${RUN_GROUP:-paper_final_atari100k_$(date +%Y%m%d_%H%M%S)}"
 RUN_LOG_ROOT="${RUN_LOG_ROOT:-${REPO_ROOT}/logs/training_scripts/${RUN_GROUP}}"
 
@@ -59,7 +62,10 @@ run_dreamer() {
       --benchmark "${BENCHMARK}" \
       --test-episode "${TEST_EPISODE}" \
       --intermediate-test-episode "${INTERMEDIATE_TEST_EPISODE}" \
+      --render-eval-video "${RENDER_EVAL_VIDEO}" \
+      --render-intermediate-video "${RENDER_INTERMEDIATE_VIDEO}" \
       --checkpoint-rule "${CHECKPOINT_RULE}" \
+      --eval-protocol "${EVAL_PROTOCOL}" \
       --log-dir "logs/paper-final/dreamer-v3/${ROM_NAME}/seed${seed}/" \
       --model-dir "models/paper-final/dreamer-v3/${ROM_NAME}/seed${seed}/"
   ) 2>&1 | tee "${log_file}"
@@ -86,7 +92,10 @@ run_htswm() {
   BENCHMARK="${BENCHMARK}" \
   TEST_EPISODE="${TEST_EPISODE}" \
   INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
+  RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO}" \
+  RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
+  EVAL_PROTOCOL="${EVAL_PROTOCOL}" \
   PYTHON_BIN="${PYTHON_BIN}" \
   LOG_DIR="logs/paper-final/hts-wm/${ROM_NAME}/seed${seed}/" \
   MODEL_DIR="models/paper-final/hts-wm/${ROM_NAME}/seed${seed}/" \
@@ -114,7 +123,10 @@ run_harmony() {
   BENCHMARK="${BENCHMARK}" \
   TEST_EPISODE="${TEST_EPISODE}" \
   INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
+  RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO}" \
+  RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
+  EVAL_PROTOCOL="${EVAL_PROTOCOL}" \
   PYTHON_BIN="${PYTHON_BIN}" \
   LOG_DIR="logs/paper-final/harmonydream/${ROM_NAME}/seed${seed}/" \
   MODEL_DIR="models/paper-final/harmonydream/${ROM_NAME}/seed${seed}/" \
@@ -142,7 +154,10 @@ run_tsae() {
   BENCHMARK="${BENCHMARK}" \
   TEST_EPISODE="${TEST_EPISODE}" \
   INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE}" \
+  RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO}" \
+  RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO}" \
   CHECKPOINT_RULE="${CHECKPOINT_RULE}" \
+  EVAL_PROTOCOL="${EVAL_PROTOCOL}" \
   PYTHON_BIN="${PYTHON_BIN}" \
   LOG_DIR="logs/paper-final/tsae-style/${ROM_NAME}/seed${seed}/" \
   MODEL_DIR="models/paper-final/tsae-style/${ROM_NAME}/seed${seed}/" \
