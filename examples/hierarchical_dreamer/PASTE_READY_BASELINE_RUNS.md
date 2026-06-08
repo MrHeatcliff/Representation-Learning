@@ -15,6 +15,10 @@ results because they used best-checkpoint selection and `3` eval episodes.
 For the remaining setup checklist, see
 `examples/hierarchical_dreamer/PAPER_SETUP_TASKS.md`.
 
+Full paper-final `26 games x 5 seeds` sweep commands live in:
+
+- `examples/hierarchical_dreamer/paper_full_runs/`
+
 ## Synthetic Multi-Timescale Dataset
 
 Generate the P0 state-vector fixed buffer:
