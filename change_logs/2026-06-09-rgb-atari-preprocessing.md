@@ -23,6 +23,10 @@
 - Updated the 26-game same-code baseline queue so every method block exports RGB Atari preprocessing and `MODEL_SIZE=xlarge`, and direct ablation run names include `rgb-xlarge`.
 - Marked older method-specific full-run docs as legacy in the paper full-runs README; the canonical queue is now `ATARI100K_26GAME_BASELINE_QUEUE.md`.
 - Changed same-code two-phase `phase1_gradient_steps` from `20000` to `2500` to match the updated `REPLAY_RATIO=0.125`; otherwise the hierarchy never activates within a 100K Atari100K run.
+- Fixed a phase-switch crash in HTS temporal contrastive loss by normalizing `episode_starts` masks to `[T, B]`.
+  The remote `error.txt` run crashed at about `21031/100000`, which is exactly when the new two-phase schedule activates the hierarchy.
+  The fix accepts `[T, B]`, `[B, T]`, and `[T, B, 1]` masks before building same-episode and far-negative temporal pairs.
+- Verified the fix with a direct temporal VICReg shape test and a real phase-switch smoke run using `phase1_gradient_steps=1`.
 
 ## RGB Sanity Check
 

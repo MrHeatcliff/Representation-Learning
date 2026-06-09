@@ -533,11 +533,28 @@ class TemporalContrastiveVICReg(nn.Module):
         assert n == m
         return matrix.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
 
+    @staticmethod
+    def _normalize_episode_starts(projections: Tensor, episode_starts: Tensor | None) -> Tensor | None:
+        if episode_starts is None:
+            return None
+        starts = episode_starts.bool()
+        while starts.ndim > 2 and starts.shape[-1] == 1:
+            starts = starts.squeeze(-1)
+        target_shape = projections.shape[:2]
+        if starts.shape == target_shape:
+            return starts
+        if starts.ndim == 2 and starts.transpose(0, 1).shape == target_shape:
+            return starts.transpose(0, 1)
+        raise ValueError(
+            "episode_starts must match temporal projection shape [T, B] or transposed [B, T]; "
+            f"got episode_starts={tuple(starts.shape)}, projections[:2]={tuple(target_shape)}."
+        )
+
     def _valid_temporal_pairs(self, projections: Tensor, episode_starts: Tensor | None) -> tuple[Tensor, Tensor, Tensor]:
         stride = self.positive_stride
         valid = torch.ones(projections.shape[:2], dtype=torch.bool, device=projections.device)
-        if episode_starts is not None:
-            starts = episode_starts.bool()
+        starts = self._normalize_episode_starts(projections, episode_starts)
+        if starts is not None:
             for offset in range(1, stride + 1):
                 valid[:-stride] &= ~starts[offset:projections.shape[0] - stride + offset]
         valid = valid[:-stride]
@@ -556,7 +573,7 @@ class TemporalContrastiveVICReg(nn.Module):
         same_batch = anchor_batches[:, None] == candidate_batches[None, :]
         if episode_starts is None:
             return same_batch
-        segment_ids = episode_starts.bool().cumsum(dim=0)
+        segment_ids = episode_starts.cumsum(dim=0)
         anchor_segments = segment_ids[anchor_times, anchor_batches]
         candidate_segments = segment_ids[candidate_times, candidate_batches]
         return same_batch & (anchor_segments[:, None] == candidate_segments[None, :])
@@ -565,6 +582,7 @@ class TemporalContrastiveVICReg(nn.Module):
         stride = self.positive_stride
         if projections.shape[0] <= stride:
             return projections.new_zeros(()), {}
+        episode_starts = self._normalize_episode_starts(projections, episode_starts)
         valid, times, batches = self._valid_temporal_pairs(projections, episode_starts)
         if valid.sum() <= 1:
             return projections.new_zeros(()), {}

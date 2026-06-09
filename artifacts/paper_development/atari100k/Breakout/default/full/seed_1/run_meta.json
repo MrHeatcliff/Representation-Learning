@@ -5,11 +5,11 @@
   "condition": "default",
   "method": "full",
   "seed": 1,
-  "run_name": "smoke-hts-full-Breakout-v5-seed1-1000steps-rgb-xlarge-1k",
-  "config_hash": "8e921ee04bd755ad",
-  "code_commit": "078024554ba91039320b5e771eda6ba688735cd7",
+  "run_name": "phase-switch-smoke-breakout",
+  "config_hash": "daf56ab28d820b38",
+  "code_commit": "2ee674092e8a9fc7e35a223f41b42e66a19313ec",
   "checkpoint_rule": "final",
   "action_repeat": 4,
-  "start_wall_time": 1780985853.416231,
+  "start_wall_time": 1780994836.26726,
   "hns_reference_version": "common_atari100k_random_human_reference_v1"
 }
