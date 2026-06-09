@@ -127,7 +127,7 @@ training_regime:
   name: "two_phase"
   freeze_encoder: false
   wm_only_phase1: true
-  phase1_gradient_steps: 20000
+  phase1_gradient_steps: 2500
   encoder_lr_scale: 0.1
   hierarchy_lr_scale: 1.0
 

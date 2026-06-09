@@ -1,12 +1,12 @@
 dl_toolbox: torch
-project_name: HTS-WM-Debug
+project_name: HTS-WM-Paper-Final-DreamerV3
 logger: wandb
 wandb_user_name: null
 render: false
 render_mode: rgb_array
 fps: 50
 test_mode: false
-device: cpu
+device: cuda:0
 distributed_training: false
 master_port: '12355'
 agent: DreamerV3
@@ -38,11 +38,11 @@ actor:
   min_std: 0.1
   max_std: 1.0
   init_std: 2.0
-  mlp_layers: 2
+  mlp_layers: 5
   layer_norm:
     kw:
       eps: 0.001
-  dense_units: 512
+  dense_units: 1024
   clip_gradients: 100.0
   unimix: 0.01
   action_clip: 1.0
@@ -53,11 +53,11 @@ actor:
       low: 0.05
       high: 0.95
 critic:
-  mlp_layers: 2
+  mlp_layers: 5
   layer_norm:
     kw:
       eps: 0.001
-  dense_units: 512
+  dense_units: 1024
   soft_update_freq: 1
   tau: 0.02
   bins: 255
@@ -73,55 +73,55 @@ world_model:
   clip_gradients: 1000.0
   learnable_initial_recurrent_state: true
   encoder:
-    cnn_channels_multiplier: 32
-    mlp_layers: 2
+    cnn_channels_multiplier: 96
+    mlp_layers: 5
     cnn_layer_norm:
       kw:
         eps: 0.001
     mlp_layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
   recurrent_model:
-    recurrent_state_size: 512
+    recurrent_state_size: 4096
     layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
   transition_model:
-    hidden_size: 512
+    hidden_size: 1024
     layer_norm:
       kw:
         eps: 0.001
   representation_model:
-    hidden_size: 512
+    hidden_size: 1024
     layer_norm:
       kw:
         eps: 0.001
   observation_model:
-    cnn_channels_multiplier: 32
-    mlp_layers: 2
+    cnn_channels_multiplier: 96
+    mlp_layers: 5
     cnn_layer_norm:
       kw:
         eps: 0.001
     mlp_layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
   reward_model:
-    mlp_layers: 2
+    mlp_layers: 5
     layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
     bins: 255
   discount_model:
     learnable: true
-    mlp_layers: 2
+    mlp_layers: 5
     layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
 gamma: 0.996996996996997
 lmbda: 0.95
 horizon: 15
@@ -129,14 +129,14 @@ unimix: 0.01
 hafner_initialization: true
 seed: 0
 parallels: 1
-buffer_size: 10000
+buffer_size: 1000000
 batch_size: 16
 seq_len: 64
 learning_rate_model: 0.0001
 learning_rate_actor: 8.0e-05
 learning_rate_critic: 8.0e-05
 replay_ratio: 0.125
-running_steps: 20
+running_steps: 100000
 start_training: 1024
 use_grad_clip: false
 clip_type: 1
@@ -147,17 +147,19 @@ use_rewnorm: false
 obsnorm_range: 5
 rewnorm_range: 5
 test_steps: 10000
-eval_interval: 10
-test_episode: 1
-log_dir: logs/debug/dreamerv3-rgb-alien-20steps/
-model_dir: models/debug/dreamerv3-rgb-alien-20steps/
-wandb_mode: disabled
-wandb_run_name: debug-dreamerv3-rgb-alien-20steps
+eval_interval: 2000
+test_episode: 100
+log_dir: logs/paper-final/dreamer-v3/rgb-64x64-stack1-repeat4-xlarge/Alien-v5/seed0/
+model_dir: models/paper-final/dreamer-v3/rgb-64x64-stack1-repeat4-xlarge/Alien-v5/seed0/
+model_size: xlarge
+wandb_mode: online
+wandb_run_name: DreamerV3-paper-final-Alien-v5-rgb-64x64-stack1-repeat4-xlarge-seed0-100000steps
 test: 0
 benchmark: 1
+intermediate_test_episode: 20
 checkpoint_rule: final
-eval_protocol: train_only
-render_eval_video: false
+eval_protocol: final
+render_eval_video: true
 render_intermediate_video: false
 artifact_root: artifacts
 experiment_id: paper_development

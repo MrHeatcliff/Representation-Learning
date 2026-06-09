@@ -22,6 +22,7 @@
 - Ran RGB/xlarge 1K smoke checks for DreamerV3, HTS-WM full, Flat-SAE, and Flat-MH successfully. SGF-style flat reached 1000 training steps but was stopped before final eval to avoid sharing `cuda:0` with an active full Atari run.
 - Updated the 26-game same-code baseline queue so every method block exports RGB Atari preprocessing and `MODEL_SIZE=xlarge`, and direct ablation run names include `rgb-xlarge`.
 - Marked older method-specific full-run docs as legacy in the paper full-runs README; the canonical queue is now `ATARI100K_26GAME_BASELINE_QUEUE.md`.
+- Changed same-code two-phase `phase1_gradient_steps` from `20000` to `2500` to match the updated `REPLAY_RATIO=0.125`; otherwise the hierarchy never activates within a 100K Atari100K run.
 
 ## RGB Sanity Check
 
