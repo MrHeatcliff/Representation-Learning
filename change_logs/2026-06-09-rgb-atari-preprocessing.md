@@ -27,6 +27,24 @@
   The remote `error.txt` run crashed at about `21031/100000`, which is exactly when the new two-phase schedule activates the hierarchy.
   The fix accepts `[T, B]`, `[B, T]`, and `[T, B, 1]` masks before building same-episode and far-negative temporal pairs.
 - Verified the fix with a direct temporal VICReg shape test and a real phase-switch smoke run using `phase1_gradient_steps=1`.
+- Kept the paper-final same-code model size at `xlarge` as requested, but corrected the remaining Atari protocol defaults:
+  `REPLAY_RATIO=1.0`, RGB observations, `repeat_action_probability=0.0`, `clip_reward=false`, and `episodic_life=false`.
+- Added Atari env flags for sticky action probability, reward clipping, and episodic-life handling to DreamerV3 and HierarchicalDreamer Atari entrypoints and same-code launchers.
+- Updated Atari configs and generated same-code ablation configs to use RGB, sticky-off, raw reward, no episodic-life boundaries, and `replay_ratio: 1.0`.
+- Restored two-phase `phase1_gradient_steps` to `20000` so the phase switch remains near 21K agent steps under `REPLAY_RATIO=1.0`.
+- Added debug/protocol W&B metrics for `agent_step`, `env_frame`, `gradient_step`, effective replay ratio, sticky probability, reward clipping, episodic-life mode, life-loss count, game-over count, reset count, truncation count, raw reward mean, and training reward mean.
+- Confirmed the reward and critic heads already use symlog/two-hot distributions, so raw reward training is consistent with the DreamerV3-style objective.
+- Switched the immediate Alien curve target from the 200M `xlarge` run to the HarmonyDream Atari100K reproduction target:
+  `MODEL_SIZE=small`, `REPLAY_RATIO=1.0`, periodic eval every `5000` policy steps, and `100` eval episodes.
+- Added `examples/hierarchical_dreamer/paper_full_runs/run_harmonydream_alien_curve.sh` and
+  `examples/hierarchical_dreamer/paper_full_runs/HARMONYDREAM_ALIEN_CURVE.md` for the Alien-first DreamerV3 Reproduced vs HarmonyDream check.
+- Guarded the HarmonyDream Alien curve launcher against inherited `MODEL_SIZE=xlarge`; it now uses `HARMONY_MODEL_SIZE=small` by default.
+- Added fair core parameter-count logging for Dreamer-style runs: world model, actor, critic, target critic, and `params/core_agent_total`.
+  The current XuanCe small Alien agent reports `19,116,691` core parameters.
+- After comparing against the official `danijar/dreamerv3` Alien curve, corrected the XuanCe Atari100K parity path:
+  manual action repeat in the wrapper with Gym ALE `frameskip=1`, 2-frame max pooling, Pillow resize, no reset autostart by default,
+  `size12m` model preset matching official `deter=2048`, `hidden/units=256`, `stoch=32`, `classes=16`,
+  and Alien curve default `REPLAY_RATIO=0.25` to match official `train_ratio=256` with `16 x 64` replay timesteps per update.
 
 ## RGB Sanity Check
 

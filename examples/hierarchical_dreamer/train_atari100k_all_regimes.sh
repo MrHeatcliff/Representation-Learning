@@ -8,22 +8,31 @@ PYTHON_BIN="${PYTHON_BIN:-${REPO_ROOT}/.venv/bin/python}"
 ENV_ID="${ENV_ID:-ALE/Breakout-v5}"
 ROM_NAME="${ENV_ID##*/}"
 DEVICE="${DEVICE:-cuda:1}"
+OBS_TYPE="${OBS_TYPE:-rgb}"
+NUM_STACK="${NUM_STACK:-1}"
+FRAME_SKIP="${FRAME_SKIP:-4}"
+REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY:-0.0}"
+CLIP_REWARD="${CLIP_REWARD:-false}"
+EPISODIC_LIFE="${EPISODIC_LIFE:-false}"
+IMG_SIZE_0="${IMG_SIZE_0:-64}"
+IMG_SIZE_1="${IMG_SIZE_1:-64}"
+MODEL_SIZE="${MODEL_SIZE:-small}"
 WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-Hierarchical-Dreamer-Atari100K}"
 SEED="${SEED:-1}"
 
 RUNNING_STEPS="${RUNNING_STEPS:-100000}"
-EVAL_INTERVAL="${EVAL_INTERVAL:-2000}"
-REPLAY_RATIO="${REPLAY_RATIO:-0.125}"
+EVAL_INTERVAL="${EVAL_INTERVAL:-5000}"
+REPLAY_RATIO="${REPLAY_RATIO:-1.0}"
 BUFFER_SIZE="${BUFFER_SIZE:-1000000}"
 START_TRAINING="${START_TRAINING:-1024}"
 BATCH_SIZE="${BATCH_SIZE:-16}"
 SEQ_LEN="${SEQ_LEN:-64}"
 PARALLELS="${PARALLELS:-1}"
 BENCHMARK="${BENCHMARK:-1}"
-TEST_EPISODE="${TEST_EPISODE:-3}"
+TEST_EPISODE="${TEST_EPISODE:-100}"
 CHECKPOINT_RULE="${CHECKPOINT_RULE:-best}"
-EVAL_PROTOCOL="${EVAL_PROTOCOL:-final}"
+EVAL_PROTOCOL="${EVAL_PROTOCOL:-periodic}"
 
 RUN_GROUP="${RUN_GROUP:-atari100k_$(date +%Y%m%d_%H%M%S)}"
 RUN_LOG_ROOT="${RUN_LOG_ROOT:-${REPO_ROOT}/logs/training_scripts/${RUN_GROUP}}"
@@ -45,6 +54,14 @@ run_hierarchical_regime() {
     "${PYTHON_BIN}" examples/hierarchical_dreamer/hierarchical_dreamer_atari.py \
       --config-file "${config_file}" \
       --env-id "${ENV_ID}" \
+      --obs-type "${OBS_TYPE}" \
+      --num-stack "${NUM_STACK}" \
+      --frame-skip "${FRAME_SKIP}" \
+      --repeat-action-probability "${REPEAT_ACTION_PROBABILITY}" \
+      --clip-reward "${CLIP_REWARD}" \
+      --episodic-life "${EPISODIC_LIFE}" \
+      --img-size "${IMG_SIZE_0}" "${IMG_SIZE_1}" \
+      --model-size "${MODEL_SIZE}" \
       --device "${DEVICE}" \
       --seed "${SEED}" \
       --logger wandb \
@@ -81,8 +98,16 @@ run_dreamer_baseline() {
   echo "[$(date --iso-8601=seconds)] Starting baseline: DreamerV3" | tee "${log_file}"
   (
     cd "${REPO_ROOT}"
-    "${PYTHON_BIN}" examples/dreamer_v3/dreamer_v3_atari.py \
+      "${PYTHON_BIN}" examples/dreamer_v3/dreamer_v3_atari.py \
       --env-id "${ENV_ID}" \
+      --obs-type "${OBS_TYPE}" \
+      --num-stack "${NUM_STACK}" \
+      --frame-skip "${FRAME_SKIP}" \
+      --repeat-action-probability "${REPEAT_ACTION_PROBABILITY}" \
+      --clip-reward "${CLIP_REWARD}" \
+      --episodic-life "${EPISODIC_LIFE}" \
+      --img-size "${IMG_SIZE_0}" "${IMG_SIZE_1}" \
+      --model-size "${MODEL_SIZE}" \
       --device "${DEVICE}" \
       --seed "${SEED}" \
       --logger wandb \

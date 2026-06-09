@@ -48,7 +48,7 @@ cd /mnt/disk1/backup_user/dat.tt2/xuance
 ENV_ID=ALE/Breakout-v5 \
 SEED=1 \
 DEVICE=cuda:0 \
-REPLAY_RATIO=0.125 \
+REPLAY_RATIO=1.0 \
 RUN_NAME=XuanCe-HarmonyDream-Breakout-v5-seed1-100000steps-rr1 \
 examples/hierarchical_dreamer/baselines/run_xuance_harmonydream_atari100k.sh
 ```
@@ -57,7 +57,7 @@ This path logs to W&B through the local XuanCe logger and can be used in the
 same project as Dreamer and HTS-WM runs.
 
 For same-code fairness against current Dreamer/HTS-WM runs, use the canonical
-XuanCe value `REPLAY_RATIO=0.125`. In this codebase, that means approximately one
+XuanCe value `REPLAY_RATIO=1.0`. In this codebase, that means approximately one
 minibatch update per agent step after `start_training`.
 
 ## Official-Code Atari100K Command

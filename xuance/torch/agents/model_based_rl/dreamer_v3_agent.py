@@ -48,6 +48,9 @@ class DreamerV3Agent(OffPolicyAgent):
         # ratio
         self.replay_ratio = self.config.replay_ratio
         self.current_step, self.gradient_step = 0, 0
+        self._debug_life_loss_count = 0
+        self._debug_game_over_count = 0
+        self._debug_truncation_count = 0
 
         # REGISTRY & create: representation, policy, learner
         ActivationFunctions['silu'] = torch.nn.SiLU
@@ -59,6 +62,7 @@ class DreamerV3Agent(OffPolicyAgent):
         self.policy = self._build_policy()
         self.memory = self._build_memory()
         self.learner = self._build_learner(self.config, self.policy, self.act_shape, self.callback)
+        self._log_model_parameter_counts()
 
         # train_player & train_states; make sure train & test to be independent
         self.train_player: PlayerDV3 = self.model.player
@@ -70,6 +74,75 @@ class DreamerV3Agent(OffPolicyAgent):
             np.zeros((self.train_envs.num_envs, )),  # truncs
             np.ones((self.train_envs.num_envs, ))  # is_first
         ]
+
+    @staticmethod
+    def _parameter_count(module, seen=None):
+        if module is None:
+            return 0
+        seen = set() if seen is None else seen
+        count = 0
+        for parameter in module.parameters():
+            ident = id(parameter)
+            if ident in seen:
+                continue
+            seen.add(ident)
+            count += parameter.numel()
+        return count
+
+    def _log_model_parameter_counts(self):
+        core_seen = set()
+        world_model_params = self._parameter_count(getattr(self.policy, "world_model", None), core_seen)
+        actor_params = self._parameter_count(getattr(self.policy, "actor", None), core_seen)
+        critic_params = self._parameter_count(getattr(self.policy, "critic", None), core_seen)
+        target_critic_params = self._parameter_count(getattr(self.policy, "target_critic", None), core_seen)
+        core_total = world_model_params + actor_params + critic_params + target_critic_params
+        policy_total = self._parameter_count(self.policy)
+        non_core_registered = max(policy_total - core_total, 0)
+        info = {
+            "params/world_model": world_model_params,
+            "params/actor": actor_params,
+            "params/critic": critic_params,
+            "params/target_critic": target_critic_params,
+            "params/core_agent_total": core_total,
+            "params/registered_policy_total": policy_total,
+            "params/non_core_registered_total": non_core_registered,
+        }
+        self.log_infos(info, 0)
+        print(
+            "Parameter count: "
+            f"world_model={world_model_params:,}, actor={actor_params:,}, "
+            f"critic={critic_params:,}, target_critic={target_critic_params:,}, "
+            f"core_agent_total={core_total:,}, registered_policy_total={policy_total:,}, "
+            f"non_core_registered_total={non_core_registered:,}"
+        )
+
+    def _env_frame_step(self, agent_step: Optional[int] = None) -> int:
+        agent_step = self.current_step if agent_step is None else agent_step
+        action_repeat = int(getattr(self.config, "frame_skip", getattr(self.config, "action_repeat", 1)))
+        return int(agent_step * action_repeat)
+
+    def _official_train_aliases(self, info: dict) -> dict:
+        aliases = {}
+        mapping = {
+            "model_loss/model_loss": "train/loss/model",
+            "model_loss/obs_loss": "train/loss/image",
+            "model_loss/rew_loss": "train/loss/rew",
+            "model_loss/continue_loss": "train/loss/con",
+            "model_loss/kl_loss": "train/loss/kl",
+            "actor_loss/actor_loss": "train/loss/policy",
+            "critic_loss/critic_loss": "train/loss/value",
+            "actor_loss/entropy_loss": "train/ent/action",
+        }
+        for src, dst in mapping.items():
+            if src in info:
+                aliases[dst] = info[src]
+        if "debug/effective_replay_ratio" in info:
+            update_ratio = float(info["debug/effective_replay_ratio"])
+            aliases["replay/update_ratio"] = update_ratio
+            aliases["replay/replay_ratio"] = update_ratio * int(self.batch_size) * int(self.config.seq_len)
+        if "step/gradient_step" in info:
+            aliases["train/updates"] = info["step/gradient_step"]
+        return aliases
 
     def _log_train_episode_csv(
         self,
@@ -206,6 +279,34 @@ class DreamerV3Agent(OffPolicyAgent):
             """(o1, a1, r1, term1, trunc1, is_first1), acts: real_acts"""
             self.memory.store(obs, acts, self._process_reward(rews), terms, truncs, is_first)
             next_obs, rews, terms, truncs, infos = self.train_envs.step(acts)
+            self._debug_life_loss_count += sum(int(info.get("life_loss", False)) for info in infos)
+            self._debug_game_over_count += sum(int(info.get("game_over", False)) for info in infos)
+            self._debug_truncation_count += int(np.sum(truncs))
+            protocol_info = {
+                "debug/agent_step": int(self.current_step),
+                "debug/env_frame": int(
+                    self.current_step * int(getattr(self.config, "frame_skip", getattr(self.config, "action_repeat", 1)))
+                ),
+                "debug/gradient_step": int(self.gradient_step),
+                "debug/effective_replay_ratio": float(
+                    self.gradient_step / max(self.current_step - self.start_training, 1)
+                    if self.current_step > self.start_training else 0.0
+                ),
+                "debug/sticky_action_probability": float(
+                    infos[0].get(
+                        "sticky_action_probability",
+                        getattr(self.config, "repeat_action_probability", getattr(self.config, "sticky_action_probability", 0.0)),
+                    )
+                ) if len(infos) > 0 else float(getattr(self.config, "repeat_action_probability", 0.0)),
+                "debug/clip_reward": float(bool(getattr(self.config, "clip_reward", False))),
+                "debug/episodic_life": float(bool(getattr(self.config, "episodic_life", False))),
+                "debug/life_loss_count": int(self._debug_life_loss_count),
+                "debug/game_over_count": int(self._debug_game_over_count),
+                "debug/env_reset_count": int(sum(int(info.get("env_reset_count", 0)) for info in infos)),
+                "debug/truncation_count": int(self._debug_truncation_count),
+                "train/raw_reward_mean": float(np.mean([info.get("raw_reward", rew) for info, rew in zip(infos, rews)])),
+                "train/training_reward_mean": float(np.mean(rews)),
+            }
 
             self.callback.on_train_step(self.current_step, envs=self.train_envs, policy=self.policy,
                                         obs=obs, acts=acts, next_obs=next_obs, rewards=rews,
@@ -252,7 +353,11 @@ class DreamerV3Agent(OffPolicyAgent):
                                 f"Episode-Steps/rank_{self.rank}": {f"env-{i}": infos[i]["episode_step"]},
                                 f"Train-Episode-Rewards/rank_{self.rank}": {f"env-{i}": infos[i]["episode_score"]}
                             }
-                        self.log_infos(episode_info, self.current_step)
+                        episode_info.update({
+                            "episode/score": episode_return,
+                            "episode/length": episode_length,
+                        })
+                        self.log_infos(episode_info, self._env_frame_step(self.current_step))
                         train_info.update(episode_info)
                         self.callback.on_train_episode_info(envs=self.train_envs, policy=self.policy, env_id=i,
                                                             infos=infos, rank=self.rank, use_wandb=self.use_wandb,
@@ -289,7 +394,9 @@ class DreamerV3Agent(OffPolicyAgent):
                 update_info = self.train_epochs(n_epochs=n_epochs)
                 self.gradient_step += n_epochs
                 if train_info is not None:
-                    self.log_infos(update_info, self.current_step)
+                    update_info.update(protocol_info)
+                    update_info.update(self._official_train_aliases(update_info))
+                    self.log_infos(update_info, self._env_frame_step(self.current_step))
                     train_info.update(update_info)
                     self.callback.on_train_epochs_end(self.current_step, policy=self.policy, memory=self.memory,
                                                       current_episode=self.current_episode, train_steps=train_steps,

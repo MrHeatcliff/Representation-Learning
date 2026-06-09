@@ -8,7 +8,7 @@ obs_type = rgb
 img_size = 64x64
 num_stack = 1
 frame_skip / action_repeat = 4
-model_size = xlarge
+model_size = small
 ```
 
 RGB sanity check already verified:
@@ -16,7 +16,7 @@ RGB sanity check already verified:
 ```text
 env observation space: Box(0, 255, (64, 64, 3), uint8)
 agent/model input:     (3, 64, 64)
-XuanCe xlarge params:  about 200.7M total
+XuanCe small params: target roughly 12-18M total
 ```
 
 ## Alien Smoke/Probe
@@ -37,12 +37,12 @@ NUM_STACK=1 \
 FRAME_SKIP=4 \
 IMG_SIZE_0=64 \
 IMG_SIZE_1=64 \
-MODEL_SIZE=xlarge \
+MODEL_SIZE=small \
 WANDB_MODE=online \
 PROJECT_NAME=HTS-WM-Paper-Final-DreamerV3-RGB \
 RUN_GROUP="dreamerv3-rgb-alien-$(date +%Y%m%d_%H%M%S)" \
 RUNNING_STEPS=100000 \
-REPLAY_RATIO=0.125 \
+REPLAY_RATIO=1.0 \
 BATCH_SIZE=16 \
 SEQ_LEN=64 \
 CHECKPOINT_RULE=final \
@@ -84,12 +84,12 @@ for GAME in "${GAMES[@]}"; do
   FRAME_SKIP=4 \
   IMG_SIZE_0=64 \
   IMG_SIZE_1=64 \
-  MODEL_SIZE=xlarge \
+  MODEL_SIZE=small \
   WANDB_MODE="$WANDB_MODE" \
   PROJECT_NAME="$PROJECT_NAME" \
   RUN_GROUP="$RUN_GROUP" \
   RUNNING_STEPS=100000 \
-  REPLAY_RATIO=0.125 \
+  REPLAY_RATIO=1.0 \
   BATCH_SIZE=16 \
   SEQ_LEN=64 \
   CHECKPOINT_RULE=final \

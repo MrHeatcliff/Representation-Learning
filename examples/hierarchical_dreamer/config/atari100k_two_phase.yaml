@@ -17,11 +17,14 @@ vectorize: "Dummy_Atari"
 env_name: "Atari"
 env_id: "ALE/Breakout-v5"
 env_seed: 1
-obs_type: "grayscale"  # choice for Atari env: ram, rgb, grayscale
+obs_type: "rgb"  # choice for Atari env: ram, rgb, grayscale
 img_size: [64, 64]  # default is 210 x 160 in gym[Atari]
 num_stack: 1  # frame stack trick
 frame_skip: 4  # frame skip trick  (action_repeat = 4 for atari100k)
 noop_max: 30
+repeat_action_probability: 0.0
+clip_reward: false
+episodic_life: false
 representation: "HierarchicalDreamerWorldModel"
 learner: "HierarchicalDreamer_Learner"
 policy: "HierarchicalDreamerPolicy"
@@ -127,7 +130,7 @@ training_regime:
   name: "two_phase"
   freeze_encoder: false
   wm_only_phase1: true
-  phase1_gradient_steps: 2500
+  phase1_gradient_steps: 20000
   encoder_lr_scale: 0.1
   hierarchy_lr_scale: 1.0
 
@@ -209,7 +212,7 @@ learning_rate_model: 0.0001  # 1e-4
 learning_rate_actor: 0.00008  # 8e-5
 learning_rate_critic: 0.00008  # 8e-5
 
-replay_ratio: 0.125  # gradient_step / replay_step
+replay_ratio: 1.0  # gradient_step / replay_step
 running_steps: 100000  # 100k
 start_training: 1024
 

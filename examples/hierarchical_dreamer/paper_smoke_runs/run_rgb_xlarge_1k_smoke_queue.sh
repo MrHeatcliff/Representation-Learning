@@ -12,10 +12,10 @@ ROM_NAME="${ENV_ID##*/}"
 export DEVICE="${DEVICE:-cuda:0}"
 export SEED="${SEED:-1}"
 export WANDB_MODE="${WANDB_MODE:-offline}"
-export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-RGB-XLarge-Smoke}"
+export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-RGB-Small-Smoke}"
 export RUNNING_STEPS="${RUNNING_STEPS:-1000}"
 export EVAL_INTERVAL="${EVAL_INTERVAL:-500}"
-export REPLAY_RATIO="${REPLAY_RATIO:-0.125}"
+export REPLAY_RATIO="${REPLAY_RATIO:-1.0}"
 export BUFFER_SIZE="${BUFFER_SIZE:-1000000}"
 export START_TRAINING="${START_TRAINING:-100}"
 export BATCH_SIZE="${BATCH_SIZE:-16}"
@@ -31,16 +31,19 @@ export RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO:-false}"
 export OBS_TYPE="${OBS_TYPE:-rgb}"
 export NUM_STACK="${NUM_STACK:-1}"
 export FRAME_SKIP="${FRAME_SKIP:-4}"
+export REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY:-0.0}"
+export CLIP_REWARD="${CLIP_REWARD:-false}"
+export EPISODIC_LIFE="${EPISODIC_LIFE:-false}"
 export IMG_SIZE_0="${IMG_SIZE_0:-64}"
 export IMG_SIZE_1="${IMG_SIZE_1:-64}"
-export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
+export MODEL_SIZE="${MODEL_SIZE:-small}"
 
-SMOKE_TAG="${SMOKE_TAG:-rgb-xlarge-1k}"
+SMOKE_TAG="${SMOKE_TAG:-rgb-small-1k}"
 SMOKE_METHODS="${SMOKE_METHODS:-all}"
-RUN_GROUP="${RUN_GROUP:-rgb_xlarge_1k_smoke_$(date +%Y%m%d_%H%M%S)}"
+RUN_GROUP="${RUN_GROUP:-rgb_small_1k_smoke_$(date +%Y%m%d_%H%M%S)}"
 RUN_LOG_ROOT="${RUN_LOG_ROOT:-${REPO_ROOT}/logs/training_scripts/${RUN_GROUP}}"
-RUN_ROOT="${RUN_ROOT:-logs/rgb_xlarge_smoke}"
-MODEL_ROOT="${MODEL_ROOT:-models/rgb_xlarge_smoke}"
+RUN_ROOT="${RUN_ROOT:-logs/rgb_small_smoke}"
+MODEL_ROOT="${MODEL_ROOT:-models/rgb_small_smoke}"
 PREPROCESS_TAG="${OBS_TYPE}-${IMG_SIZE_0}x${IMG_SIZE_1}-stack${NUM_STACK}-repeat${FRAME_SKIP}-${MODEL_SIZE}"
 
 mkdir -p "${RUN_LOG_ROOT}"
@@ -66,6 +69,9 @@ run_dreamer() {
       --obs-type "${OBS_TYPE}" \
       --num-stack "${NUM_STACK}" \
       --frame-skip "${FRAME_SKIP}" \
+      --repeat-action-probability "${REPEAT_ACTION_PROBABILITY}" \
+      --clip-reward "${CLIP_REWARD}" \
+      --episodic-life "${EPISODIC_LIFE}" \
       --img-size "${IMG_SIZE_0}" "${IMG_SIZE_1}" \
       --model-size "${MODEL_SIZE}" \
       --device "${DEVICE}" \
@@ -104,6 +110,9 @@ run_hts_config() {
     OBS_TYPE="${OBS_TYPE}" \
     NUM_STACK="${NUM_STACK}" \
     FRAME_SKIP="${FRAME_SKIP}" \
+    REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY}" \
+    CLIP_REWARD="${CLIP_REWARD}" \
+    EPISODIC_LIFE="${EPISODIC_LIFE}" \
     IMG_SIZE_0="${IMG_SIZE_0}" \
     IMG_SIZE_1="${IMG_SIZE_1}" \
     MODEL_SIZE="${MODEL_SIZE}" \
@@ -141,6 +150,9 @@ run_xuance_harmony() {
     OBS_TYPE="${OBS_TYPE}" \
     NUM_STACK="${NUM_STACK}" \
     FRAME_SKIP="${FRAME_SKIP}" \
+    REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY}" \
+    CLIP_REWARD="${CLIP_REWARD}" \
+    EPISODIC_LIFE="${EPISODIC_LIFE}" \
     IMG_SIZE_0="${IMG_SIZE_0}" \
     IMG_SIZE_1="${IMG_SIZE_1}" \
     MODEL_SIZE="${MODEL_SIZE}" \
@@ -178,6 +190,9 @@ run_tsae_style() {
     OBS_TYPE="${OBS_TYPE}" \
     NUM_STACK="${NUM_STACK}" \
     FRAME_SKIP="${FRAME_SKIP}" \
+    REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY}" \
+    CLIP_REWARD="${CLIP_REWARD}" \
+    EPISODIC_LIFE="${EPISODIC_LIFE}" \
     IMG_SIZE_0="${IMG_SIZE_0}" \
     IMG_SIZE_1="${IMG_SIZE_1}" \
     MODEL_SIZE="${MODEL_SIZE}" \
@@ -262,4 +277,4 @@ if contains_method tsae-style; then
   run_tsae_style
 fi
 
-echo "RGB xlarge 1K smoke queue finished."
+echo "RGB small 1K smoke queue finished."

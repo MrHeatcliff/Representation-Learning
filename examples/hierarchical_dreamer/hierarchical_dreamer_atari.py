@@ -98,6 +98,7 @@ def apply_model_size(configs_dict, model_size):
     if model_size is None:
         return configs_dict
     sizes = {
+        "size12m": {"deter": 2048, "units": 256, "cnn_depth": 16, "layers": 2, "classes": 16},
         "small": {"deter": 512, "units": 512, "cnn_depth": 32, "layers": 2},
         "medium": {"deter": 1024, "units": 640, "cnn_depth": 48, "layers": 3},
         "large": {"deter": 2048, "units": 768, "cnn_depth": 64, "layers": 4},
@@ -105,6 +106,8 @@ def apply_model_size(configs_dict, model_size):
     }
     scale = sizes[model_size]
     world_model = configs_dict["world_model"]
+    if "classes" in scale:
+        world_model["discrete_size"] = scale["classes"]
     world_model["recurrent_model"]["recurrent_state_size"] = scale["deter"]
     world_model["recurrent_model"]["dense_units"] = scale["units"]
     world_model["transition_model"]["hidden_size"] = scale["units"]
@@ -144,7 +147,10 @@ def parse_args():
     parser.add_argument("--img-size", type=int, nargs=2, default=None)
     parser.add_argument("--num-stack", type=int, default=None)
     parser.add_argument("--frame-skip", type=int, default=None)
-    parser.add_argument("--model-size", type=str, default=None, choices=["small", "medium", "large", "xlarge"])
+    parser.add_argument("--repeat-action-probability", type=float, default=None)
+    parser.add_argument("--clip-reward", type=str2bool, default=None)
+    parser.add_argument("--episodic-life", type=str2bool, default=None)
+    parser.add_argument("--model-size", type=str, default=None, choices=["size12m", "small", "medium", "large", "xlarge"])
     parser.add_argument("--log-dir", type=str, default=None)
     parser.add_argument("--model-dir", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
@@ -157,7 +163,8 @@ def parse_args():
     parser.add_argument("--wandb-run-name", type=str, default=None)
 
     # XuanCe replay_ratio is minibatch updates per agent step after start_training.
-    # 0.125 gives about 12.5K updates over 100K agent steps with 16x64 batches.
+    # 1.0 matches DreamerV3 paper-v2 Atari100K train_ratio=1024 replayed timesteps
+    # per agent step when batch_size x seq_len = 16 x 64 = 1024.
     parser.add_argument("--running-steps", type=int, default=None)
     parser.add_argument("--eval-interval", type=int, default=None)
     parser.add_argument("--replay-ratio", type=float, default=None)

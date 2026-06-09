@@ -21,12 +21,12 @@ replay_ratio = 0.125
 
 | File | Method | Status |
 |---|---|---|
-| `ATARI100K_26GAME_BASELINE_QUEUE.md` | Canonical RGB/xlarge 26-game queue for all currently ready same-code baselines | READY |
+| `ATARI100K_26GAME_BASELINE_QUEUE.md` | Canonical RGB/small 26-game queue for all currently ready same-code baselines | READY |
 | `DREAMERV3_SAMECODE_RGB_ATARI100K.md` | XuanCe DreamerV3 with RGB Atari preprocessing | READY |
-| `dreamerv3_full_atari100k.md` | Legacy DreamerV3 anchor; prefer the RGB/xlarge files above | LEGACY |
-| `flat_mh_full_atari100k.md` | Legacy Flat-MH control; prefer the RGB/xlarge queue above | LEGACY |
+| `dreamerv3_full_atari100k.md` | Legacy DreamerV3 anchor; prefer the RGB/small files above | LEGACY |
+| `flat_mh_full_atari100k.md` | Legacy Flat-MH control; prefer the RGB/small queue above | LEGACY |
 
-Before launching RGB/xlarge sweeps, run:
+Before launching RGB/small sweeps, run:
 
 ```bash
 cat examples/hierarchical_dreamer/paper_smoke_runs/RGB_XLARGE_1K_SMOKE_COMMANDS.md

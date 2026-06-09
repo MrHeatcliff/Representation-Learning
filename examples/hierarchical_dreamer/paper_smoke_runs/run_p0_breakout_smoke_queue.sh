@@ -11,7 +11,7 @@ export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-P0-Smoke}"
 export RUNNING_STEPS="${RUNNING_STEPS:-10000}"
 export EVAL_INTERVAL="${EVAL_INTERVAL:-2500}"
-export REPLAY_RATIO="${REPLAY_RATIO:-0.125}"
+export REPLAY_RATIO="${REPLAY_RATIO:-1.0}"
 export BUFFER_SIZE="${BUFFER_SIZE:-1000000}"
 export START_TRAINING="${START_TRAINING:-1024}"
 export BATCH_SIZE="${BATCH_SIZE:-16}"
@@ -24,6 +24,15 @@ export TEST_EPISODE="${TEST_EPISODE:-3}"
 export INTERMEDIATE_TEST_EPISODE="${INTERMEDIATE_TEST_EPISODE:-3}"
 export RENDER_EVAL_VIDEO="${RENDER_EVAL_VIDEO:-true}"
 export RENDER_INTERMEDIATE_VIDEO="${RENDER_INTERMEDIATE_VIDEO:-false}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY:-0.0}"
+export CLIP_REWARD="${CLIP_REWARD:-false}"
+export EPISODIC_LIFE="${EPISODIC_LIFE:-false}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-small}"
 export SMOKE_TAG="${SMOKE_TAG:-p0-smoke-10k}"
 
 run_dreamer() {
@@ -31,6 +40,14 @@ run_dreamer() {
   echo "===== RUN ${run_name} ====="
   "${PYTHON_BIN}" examples/dreamer_v3/dreamer_v3_atari.py \
     --env-id "${ENV_ID}" \
+    --obs-type "${OBS_TYPE}" \
+    --num-stack "${NUM_STACK}" \
+    --frame-skip "${FRAME_SKIP}" \
+    --repeat-action-probability "${REPEAT_ACTION_PROBABILITY}" \
+    --clip-reward "${CLIP_REWARD}" \
+    --episodic-life "${EPISODIC_LIFE}" \
+    --img-size "${IMG_SIZE_0}" "${IMG_SIZE_1}" \
+    --model-size "${MODEL_SIZE}" \
     --device "${DEVICE}" \
     --seed "${SEED}" \
     --logger wandb \
@@ -64,6 +81,15 @@ run_hts_config() {
   CONFIG_FILE="${config_file}" \
   RUN_NAME="${run_name}" \
   ENV_ID="${ENV_ID}" \
+  OBS_TYPE="${OBS_TYPE}" \
+  NUM_STACK="${NUM_STACK}" \
+  FRAME_SKIP="${FRAME_SKIP}" \
+  REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY}" \
+  CLIP_REWARD="${CLIP_REWARD}" \
+  EPISODIC_LIFE="${EPISODIC_LIFE}" \
+  IMG_SIZE_0="${IMG_SIZE_0}" \
+  IMG_SIZE_1="${IMG_SIZE_1}" \
+  MODEL_SIZE="${MODEL_SIZE}" \
   DEVICE="${DEVICE}" \
   SEED="${SEED}" \
   WANDB_MODE="${WANDB_MODE}" \
@@ -93,6 +119,15 @@ run_xuance_harmony() {
   echo "===== RUN ${run_name} ====="
   RUN_NAME="${run_name}" \
   ENV_ID="${ENV_ID}" \
+  OBS_TYPE="${OBS_TYPE}" \
+  NUM_STACK="${NUM_STACK}" \
+  FRAME_SKIP="${FRAME_SKIP}" \
+  REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY}" \
+  CLIP_REWARD="${CLIP_REWARD}" \
+  EPISODIC_LIFE="${EPISODIC_LIFE}" \
+  IMG_SIZE_0="${IMG_SIZE_0}" \
+  IMG_SIZE_1="${IMG_SIZE_1}" \
+  MODEL_SIZE="${MODEL_SIZE}" \
   DEVICE="${DEVICE}" \
   SEED="${SEED}" \
   WANDB_MODE="${WANDB_MODE}" \
@@ -121,6 +156,15 @@ run_tsae_style() {
   echo "===== RUN ${run_name} ====="
   RUN_NAME="${run_name}" \
   ENV_ID="${ENV_ID}" \
+  OBS_TYPE="${OBS_TYPE}" \
+  NUM_STACK="${NUM_STACK}" \
+  FRAME_SKIP="${FRAME_SKIP}" \
+  REPEAT_ACTION_PROBABILITY="${REPEAT_ACTION_PROBABILITY}" \
+  CLIP_REWARD="${CLIP_REWARD}" \
+  EPISODIC_LIFE="${EPISODIC_LIFE}" \
+  IMG_SIZE_0="${IMG_SIZE_0}" \
+  IMG_SIZE_1="${IMG_SIZE_1}" \
+  MODEL_SIZE="${MODEL_SIZE}" \
   DEVICE="${DEVICE}" \
   SEED="${SEED}" \
   WANDB_MODE="${WANDB_MODE}" \
@@ -160,4 +204,3 @@ run_xuance_harmony
 run_tsae_style
 
 echo "All P0 Breakout smoke runs finished."
-

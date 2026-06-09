@@ -1,20 +1,18 @@
 dl_toolbox: torch
-project_name: Hierarchical-Dreamer-Atari100K
+project_name: HTS-WM-HarmonyDream-Alien-Curve
 logger: wandb
 wandb_user_name: null
 render: false
 render_mode: rgb_array
 fps: 50
 test_mode: false
-test: 0
-benchmark: 1
 device: cuda:0
 distributed_training: false
 master_port: '12355'
-agent: HierarchicalDreamer
+agent: DreamerV3
 vectorize: Dummy_Atari
 env_name: Atari
-env_id: ALE/Breakout-v5
+env_id: ALE/Alien-v5
 env_seed: 1
 obs_type: rgb
 img_size:
@@ -26,9 +24,9 @@ noop_max: 30
 repeat_action_probability: 0.0
 clip_reward: false
 episodic_life: false
-representation: HierarchicalDreamerWorldModel
-learner: HierarchicalDreamer_Learner
-policy: HierarchicalDreamerPolicy
+representation: DreamerV3WorldModel
+learner: DreamerV3_Learner
+policy: DreamerV3Policy
 runner: DRL
 harmony: false
 distribution:
@@ -67,109 +65,6 @@ critic:
   tau: 0.02
   bins: 255
   clip_gradients: 100.0
-hierarchical_latent:
-  enabled: true
-  ablation_name: dense_multistride_no_sparse
-  control_mode: hts
-  trunk_hidden_size: 512
-  trunk_output_size: 256
-  num_heads: 6
-  head_dim: 32
-  flat_code_dim: 192
-  flat_topk: 48
-  flat_trunk_hidden_size: 512
-  flat_trunk_output_size: 256
-  activation: silu
-  sparsity_topk:
-  - 8
-  - 8
-  - 8
-  - 8
-  - 8
-  - 8
-  integration: residual
-  residual_scale: 0.1
-  reconstruction:
-    decoder_hidden_size: 512
-    betas:
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    stop_gradient_lower_levels: true
-  sparse_dynamics:
-    predictor_hidden_size: 512
-    strides:
-    - 32
-    - 16
-    - 8
-    - 4
-    - 2
-    - 1
-    alphas:
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    require_strict_decreasing: true
-    stop_gradient_lower_levels: true
-    target_stop_gradient: true
-    action_mode: subsequence
-  flat_mh:
-    horizons:
-    - 1
-    - 2
-    - 4
-    - 8
-    - 16
-    - 32
-    alphas:
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-  temporal_consistency:
-    mode: contrastive
-    projector_type: nonlinear
-    far_negative_mode: hard
-    projection_hidden_size: 128
-    projection_dim: 64
-    positive_stride: 1
-    temperature: 0.1
-  variance_covariance:
-    mode: both
-    std_target: 1.0
-    variance_weight: 1.0
-    covariance_weight: 0.04
-  sparsity:
-    mode: none
-    budget_schedule: uniform
-    gammas:
-    - 0.0001
-    - 0.0001
-    - 0.0001
-    - 0.0001
-    - 0.0001
-    - 0.0001
-  loss_weights:
-    hierarchical: 1.0
-    sparse_dynamics: 1.0
-    temporal: 0.1
-    variance_covariance: 0.1
-    sparsity: 0.0
-training_regime:
-  name: two_phase
-  freeze_encoder: false
-  wm_only_phase1: true
-  phase1_gradient_steps: 20000
-  encoder_lr_scale: 0.1
-  hierarchy_lr_scale: 1.0
 world_model:
   discrete_size: 32
   stochastic_size: 32
@@ -235,7 +130,7 @@ lmbda: 0.95
 horizon: 15
 unimix: 0.01
 hafner_initialization: true
-seed: 1
+seed: 0
 parallels: 1
 buffer_size: 1000000
 batch_size: 16
@@ -244,7 +139,7 @@ learning_rate_model: 0.0001
 learning_rate_actor: 8.0e-05
 learning_rate_critic: 8.0e-05
 replay_ratio: 1.0
-running_steps: 100000
+running_steps: 10000
 start_training: 1024
 use_grad_clip: false
 clip_type: 1
@@ -255,7 +150,24 @@ use_rewnorm: false
 obsnorm_range: 5
 rewnorm_range: 5
 test_steps: 10000
-eval_interval: 2000
-test_episode: 3
-log_dir: logs/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/
-model_dir: models/hierarchical-dreamer/atari100k/two_phase/Breakout-v5/
+eval_interval: 5000
+test_episode: 20
+log_dir: logs/harmonydream-alien-curve/dreamerv3/rgb-64x64-stack1-repeat4-small/Alien-v5/seed0/
+model_dir: models/harmonydream-alien-curve/dreamerv3/rgb-64x64-stack1-repeat4-small/Alien-v5/seed0/
+model_size: small
+wandb_mode: online
+wandb_run_name: DreamerV3-reproduced-Alien-v5-rgb-64x64-stack1-repeat4-small-seed0-10000steps
+test: 0
+benchmark: 1
+intermediate_test_episode: 20
+checkpoint_rule: final
+eval_protocol: periodic
+render_eval_video: false
+render_intermediate_video: false
+artifact_root: artifacts
+experiment_id: paper_development
+suite: atari100k
+condition: dreamerv3_reproduced
+episode_length: 100000.0
+is_continuous: false
+act_shape: 18
