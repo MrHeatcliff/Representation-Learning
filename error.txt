@@ -1,0 +1,60 @@
+(base) ntduc@pc:~/Desktop/Dat/Representation-Learning$ for GAME in "${GAMES[@]}"; do   ENV_ID="ALE/${GAME}-v5"   METHODS=htswm   SEEDS=0,1,2,3,4   DEVICE="$DEVICE"   WANDB_MODE="$WANDB_MODE"   PROJECT_NAME="$PROJECT_NAME"   RUN_GROUP="$RUN_GROUP"   RUNNING_STEPS=100000   REPLAY_RATIO=0.125   BATCH_SIZE=16   SEQ_LEN=64   CHECKPOINT_RULE=final   EVAL_PROTOCOL=final   TEST_EPISODE=100   INTERMEDIATE_TEST_EPISODE=20   RENDER_EVAL_VIDEO=true   RENDER_INTERMEDIATE_VIDEO=false   examples/hierarchical_dreamer/run_paper_final_samecode_atari100k.sh; done
+Run group: atari26-htswm-20260608_215130
+Methods: htswm
+Seeds: 0,1,2,3,4
+Environment: ALE/Alien-v5
+Preprocessing: rgb-64x64-stack1-repeat4-xlarge
+Checkpoint rule: final
+Test episodes: 100
+Intermediate test episodes: 20
+Logs: /home/ntduc/Desktop/Dat/Representation-Learning/logs/training_scripts/atari26-htswm-20260608_215130
+A.L.E: Arcade Learning Environment (version 0.10.1+unknown)
+[Powered by Stella]
+wandb: WARNING `start_method` is deprecated and will be removed in a future version of wandb. This setting is currently non-functional and safely ignored.
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/ntduc/.netrc.
+wandb: Currently logged in as: ttdat170703 (ttdat170703-ho-chi-minh-city-university-of-technology) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
+wandb: Tracking run with wandb version 0.27.1
+wandb: Run data is saved locally in /home/ntduc/Desktop/Dat/Representation-Learning/logs/paper-final/hts-wm/rgb-64x64-stack1-repeat4-xlarge/Alien-v5/seed0/wandb/run-20260608_220113-rgl6ht56
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run HTS-WM-paper-final-Alien-v5-rgb-64x64-stack1-repeat4-xlarge-seed0-100000steps
+wandb: ⭐️ View project at https://wandb.ai/ttdat170703-ho-chi-minh-city-university-of-technology/HTS-WM-Paper-Final-HTSWM
+wandb: 🚀 View run at https://wandb.ai/ttdat170703-ho-chi-minh-city-university-of-technology/HTS-WM-Paper-Final-HTSWM/runs/rgl6ht56
+Deep learning toolbox: torch
+Calculating device: cuda:0
+Algorithm: HierarchicalDreamer
+Environment: Atari
+Scenario: ALE/Alien-v5
+ 21%|██        | 21031/100000 [36:27<2:16:54,  9.61it/s]
+Traceback (most recent call last):
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/examples/hierarchical_dreamer/hierarchical_dreamer_atari.py", line 239, in <module>
+    Agent.train(configs.running_steps // configs.parallels)
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/agents/model_based_rl/dreamer_v3_agent.py", line 289, in train
+    update_info = self.train_epochs(n_epochs=n_epochs)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/agents/model_based_rl/dreamer_v3_agent.py", line 190, in train_epochs
+    train_info = self.learner.update(**cur_samples)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/learners/model_based/hierarchical_dreamer_learner.py", line 169, in update
+    self.policy.model_forward(obs, acts, is_first)
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/policies/hierarchical_dreamer.py", line 1074, in model_forward
+    recurrent_states, _ = self.apply_hierarchical_latent(recurrent_states, acts, is_first)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/policies/hierarchical_dreamer.py", line 893, in apply_hierarchical_latent
+    temporal_loss, vicreg_loss, regularizer_info = self.temporal_vicreg(sparse_heads[..., 0, :], episode_starts)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/policies/hierarchical_dreamer.py", line 656, in forward
+    temporal_loss, contrastive_info = self._temporal_contrastive_loss(projections, episode_starts)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/policies/hierarchical_dreamer.py", line 568, in _temporal_contrastive_loss
+    valid, times, batches = self._valid_temporal_pairs(projections, episode_starts)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ntduc/Desktop/Dat/Representation-Learning/xuance/torch/policies/hierarchical_dreamer.py", line 542, in _valid_temporal_pairs
+    valid[:-stride] &= ~starts[offset:projections.shape[0] - stride + offset]
+RuntimeError: The size of tensor a (63) must match the size of tensor b (16) at non-singleton dimension 1
