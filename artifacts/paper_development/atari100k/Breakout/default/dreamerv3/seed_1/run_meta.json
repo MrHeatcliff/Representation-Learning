@@ -5,11 +5,11 @@
   "condition": "default",
   "method": "DreamerV3",
   "seed": 1,
-  "run_name": "smoke-dreamerv3-breakout-seed1-10000steps-p0-smoke-10k",
-  "config_hash": "5ffd567384bd0518",
-  "code_commit": "961c6108a7fa40e4de08045d28e17297e052e34f",
+  "run_name": "smoke-dreamerv3-Breakout-v5-seed1-1000steps-rgb-xlarge-1k",
+  "config_hash": "095925d9420934de",
+  "code_commit": "078024554ba91039320b5e771eda6ba688735cd7",
   "checkpoint_rule": "final",
   "action_repeat": 4,
-  "start_wall_time": 1780907893.3710716,
+  "start_wall_time": 1780985551.583797,
   "hns_reference_version": "common_atari100k_random_human_reference_v1"
 }

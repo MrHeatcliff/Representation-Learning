@@ -11,6 +11,10 @@ action_repeat = 4, so about 400000 raw Atari frames
 replay_ratio = 0.125 under XuanCe minibatch-update semantics
 batch_size = 16
 seq_len = 64
+obs_type = rgb
+img_size = 64x64
+num_stack = 1
+model_size = xlarge
 checkpoint_rule = final
 eval_protocol = final
 test_episode = 100
@@ -50,6 +54,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-DreamerV3}"
 export RUN_GROUP="${RUN_GROUP:-atari26-dreamerv3-$(date +%Y%m%d_%H%M%S)}"
@@ -92,6 +102,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-HTSWM}"
 export RUN_GROUP="${RUN_GROUP:-atari26-htswm-$(date +%Y%m%d_%H%M%S)}"
@@ -134,6 +150,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-FlatMH}"
 export RUN_GROUP="${RUN_GROUP:-atari26-flat-mh-$(date +%Y%m%d_%H%M%S)}"
@@ -148,7 +170,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/flat_mh.yaml \
-    RUN_NAME="flat-mh-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="flat-mh-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -179,6 +201,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-FlatSAE}"
 export RUN_GROUP="${RUN_GROUP:-atari26-flat-sae-$(date +%Y%m%d_%H%M%S)}"
@@ -193,7 +221,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/flat_sae.yaml \
-    RUN_NAME="flat-sae-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="flat-sae-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -224,6 +252,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-SGFStyleFlat}"
 export RUN_GROUP="${RUN_GROUP:-atari26-sgf-style-flat-$(date +%Y%m%d_%H%M%S)}"
@@ -238,7 +272,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/sgf_style_flat_same_code.yaml \
-    RUN_NAME="sgf-style-flat-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="sgf-style-flat-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -269,6 +303,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-ReconOnly}"
 export RUN_GROUP="${RUN_GROUP:-atari26-recon-only-$(date +%Y%m%d_%H%M%S)}"
@@ -283,7 +323,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/recon_only_hierarchy.yaml \
-    RUN_NAME="recon-only-hierarchy-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="recon-only-hierarchy-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -314,6 +354,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-DenseMultiStrideNoSparse}"
 export RUN_GROUP="${RUN_GROUP:-atari26-dense-multistride-no-sparse-$(date +%Y%m%d_%H%M%S)}"
@@ -328,7 +374,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/dense_multistride_no_sparse.yaml \
-    RUN_NAME="dense-multistride-no-sparse-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="dense-multistride-no-sparse-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -359,6 +405,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-NoHier}"
 export RUN_GROUP="${RUN_GROUP:-atari26-hts-no-hier-$(date +%Y%m%d_%H%M%S)}"
@@ -373,7 +425,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/hts_no_hier.yaml \
-    RUN_NAME="hts-no-hier-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="hts-no-hier-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -404,6 +456,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-NoSDyn}"
 export RUN_GROUP="${RUN_GROUP:-atari26-hts-no-sdyn-$(date +%Y%m%d_%H%M%S)}"
@@ -418,7 +476,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/hts_no_sdyn.yaml \
-    RUN_NAME="hts-no-sdyn-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="hts-no-sdyn-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -449,6 +507,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-NoTemp}"
 export RUN_GROUP="${RUN_GROUP:-atari26-hts-no-temp-$(date +%Y%m%d_%H%M%S)}"
@@ -463,7 +527,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/hts_no_temp.yaml \
-    RUN_NAME="hts-no-temp-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="hts-no-temp-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -494,6 +558,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-NoVC}"
 export RUN_GROUP="${RUN_GROUP:-atari26-hts-no-vc-$(date +%Y%m%d_%H%M%S)}"
@@ -508,7 +578,7 @@ GAMES=(
 for GAME in "${GAMES[@]}"; do
   for SEED in 0 1 2 3 4; do
     CONFIG_FILE=examples/hierarchical_dreamer/config/generated_configs/hts_no_vc.yaml \
-    RUN_NAME="hts-no-vc-${GAME}-seed${SEED}-100k" \
+    RUN_NAME="hts-no-vc-${GAME}-rgb-xlarge-seed${SEED}-100k" \
     ENV_ID="ALE/${GAME}-v5" \
     SEED="$SEED" \
     DEVICE="$DEVICE" \
@@ -539,6 +609,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-XuanCeHarmony}"
 export RUN_GROUP="${RUN_GROUP:-atari26-xuance-harmony-$(date +%Y%m%d_%H%M%S)}"
@@ -581,6 +657,12 @@ set -euo pipefail
 cd /mnt/disk1/backup_user/dat.tt2/xuance
 
 export DEVICE="${DEVICE:-cuda:0}"
+export OBS_TYPE="${OBS_TYPE:-rgb}"
+export NUM_STACK="${NUM_STACK:-1}"
+export FRAME_SKIP="${FRAME_SKIP:-4}"
+export IMG_SIZE_0="${IMG_SIZE_0:-64}"
+export IMG_SIZE_1="${IMG_SIZE_1:-64}"
+export MODEL_SIZE="${MODEL_SIZE:-xlarge}"
 export WANDB_MODE="${WANDB_MODE:-online}"
 export PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Paper-Final-TSAEStyle}"
 export RUN_GROUP="${RUN_GROUP:-atari26-tsae-style-$(date +%Y%m%d_%H%M%S)}"

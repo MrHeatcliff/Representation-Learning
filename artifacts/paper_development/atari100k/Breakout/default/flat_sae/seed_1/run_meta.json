@@ -5,11 +5,11 @@
   "condition": "default",
   "method": "flat_sae",
   "seed": 1,
-  "run_name": "smoke-flat-sae-breakout-seed1-10000steps-p0-smoke-10k",
-  "config_hash": "8ff449d079db0611",
-  "code_commit": "d60fabfdc17478e504d80664c994f90e2fe0f02a",
+  "run_name": "smoke-flat-sae-Breakout-v5-seed1-1000steps-rgb-xlarge-1k",
+  "config_hash": "7ea8f1b7f156f4d9",
+  "code_commit": "078024554ba91039320b5e771eda6ba688735cd7",
   "checkpoint_rule": "final",
   "action_repeat": 4,
-  "start_wall_time": 1780910126.7331848,
+  "start_wall_time": 1780986111.2011797,
   "hns_reference_version": "common_atari100k_random_human_reference_v1"
 }

@@ -1,0 +1,4 @@
+experiment_id,suite,task,condition,method,seed,checkpoint_path,global_step,env_steps,agent_actions,frames,action_repeat,optimizer_updates,eval_episodes,metric_name,metric_value,raw_or_normalized,config_hash,code_commit,wall_clock_seconds
+paper_development,atari100k,Alien,default,DreamerV3,3,final_model.pth,100000,100000,100000,400000,4,12372,100,raw_return_mean,353.3,raw,6aee5647db94d858,078024554ba91039320b5e771eda6ba688735cd7,9129.898
+paper_development,atari100k,Alien,default,DreamerV3,3,final_model.pth,100000,100000,100000,400000,4,12372,100,raw_return_std,81.36405840418729,raw,6aee5647db94d858,078024554ba91039320b5e771eda6ba688735cd7,9129.898
+paper_development,atari100k,Alien,default,DreamerV3,3,final_model.pth,100000,100000,100000,400000,4,12372,100,hns_mean,1.8188669401005813,normalized,6aee5647db94d858,078024554ba91039320b5e771eda6ba688735cd7,9129.898

@@ -94,6 +94,39 @@ def str2bool(value):
     raise argparse.ArgumentTypeError(f"Expected boolean value, got {value}.")
 
 
+def apply_model_size(configs_dict, model_size):
+    if model_size is None:
+        return configs_dict
+    sizes = {
+        "small": {"deter": 512, "units": 512, "cnn_depth": 32, "layers": 2},
+        "medium": {"deter": 1024, "units": 640, "cnn_depth": 48, "layers": 3},
+        "large": {"deter": 2048, "units": 768, "cnn_depth": 64, "layers": 4},
+        "xlarge": {"deter": 4096, "units": 1024, "cnn_depth": 96, "layers": 5},
+    }
+    scale = sizes[model_size]
+    world_model = configs_dict["world_model"]
+    world_model["recurrent_model"]["recurrent_state_size"] = scale["deter"]
+    world_model["recurrent_model"]["dense_units"] = scale["units"]
+    world_model["transition_model"]["hidden_size"] = scale["units"]
+    world_model["representation_model"]["hidden_size"] = scale["units"]
+    world_model["encoder"]["cnn_channels_multiplier"] = scale["cnn_depth"]
+    world_model["encoder"]["dense_units"] = scale["units"]
+    world_model["encoder"]["mlp_layers"] = scale["layers"]
+    world_model["observation_model"]["cnn_channels_multiplier"] = scale["cnn_depth"]
+    world_model["observation_model"]["dense_units"] = scale["units"]
+    world_model["observation_model"]["mlp_layers"] = scale["layers"]
+    world_model["reward_model"]["dense_units"] = scale["units"]
+    world_model["reward_model"]["mlp_layers"] = scale["layers"]
+    world_model["discount_model"]["dense_units"] = scale["units"]
+    world_model["discount_model"]["mlp_layers"] = scale["layers"]
+    configs_dict["actor"]["dense_units"] = scale["units"]
+    configs_dict["actor"]["mlp_layers"] = scale["layers"]
+    configs_dict["critic"]["dense_units"] = scale["units"]
+    configs_dict["critic"]["mlp_layers"] = scale["layers"]
+    configs_dict["model_size"] = model_size
+    return configs_dict
+
+
 def agent_test(agent, test_episodes, test_envs, close_envs=False, render_video=False):
     previous_render = agent.render
     agent.render = bool(render_video)
@@ -107,6 +140,11 @@ def parse_args():
     parser = argparse.ArgumentParser("Example of XuanCe: Hierarchical Dreamer for Atari.")
     parser.add_argument("--config-file", type=str, default="config/atari.yaml")
     parser.add_argument("--env-id", type=str, default=None)
+    parser.add_argument("--obs-type", type=str, default=None, choices=["ram", "rgb", "grayscale"])
+    parser.add_argument("--img-size", type=int, nargs=2, default=None)
+    parser.add_argument("--num-stack", type=int, default=None)
+    parser.add_argument("--frame-skip", type=int, default=None)
+    parser.add_argument("--model-size", type=str, default=None, choices=["small", "medium", "large", "xlarge"])
     parser.add_argument("--log-dir", type=str, default=None)
     parser.add_argument("--model-dir", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
@@ -162,6 +200,7 @@ if __name__ == '__main__':
     configs_dict = load_yaml(file_dir=str(config_path))
     parser_overrides = {k: v for k, v in parser.__dict__.items() if k != "config_file" and v is not None}
     configs_dict = recursive_dict_update(configs_dict, parser_overrides)
+    configs_dict = apply_model_size(configs_dict, parser.model_size)
     configs = argparse.Namespace(**configs_dict)
     configs.experiment_id = parser.experiment_id
     if getattr(configs, "wandb_run_name", None) is None:

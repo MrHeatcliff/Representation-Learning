@@ -5,11 +5,11 @@
   "condition": "default",
   "method": "full",
   "seed": 1,
-  "run_name": "smoke-hts-full-breakout-seed1-10000steps-p0-smoke-10k",
-  "config_hash": "675fb3fda1c5f559",
-  "code_commit": "d60fabfdc17478e504d80664c994f90e2fe0f02a",
+  "run_name": "smoke-hts-full-Breakout-v5-seed1-1000steps-rgb-xlarge-1k",
+  "config_hash": "8e921ee04bd755ad",
+  "code_commit": "078024554ba91039320b5e771eda6ba688735cd7",
   "checkpoint_rule": "final",
   "action_repeat": 4,
-  "start_wall_time": 1780909306.6581998,
+  "start_wall_time": 1780985853.416231,
   "hns_reference_version": "common_atari100k_random_human_reference_v1"
 }

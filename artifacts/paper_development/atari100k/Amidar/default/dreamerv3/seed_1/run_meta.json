@@ -1,0 +1,15 @@
+{
+  "experiment_id": "paper_development",
+  "suite": "atari100k",
+  "task": "Amidar",
+  "condition": "default",
+  "method": "DreamerV3",
+  "seed": 1,
+  "run_name": "DreamerV3-paper-final-Amidar-v5-seed1-100000steps",
+  "config_hash": "de3005ad480b5812",
+  "code_commit": "078024554ba91039320b5e771eda6ba688735cd7",
+  "checkpoint_rule": "final",
+  "action_repeat": 4,
+  "start_wall_time": 1780986482.458651,
+  "hns_reference_version": "common_atari100k_random_human_reference_v1"
+}

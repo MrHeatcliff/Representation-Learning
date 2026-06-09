@@ -1,5 +1,5 @@
 dl_toolbox: torch
-project_name: HTS-WM-P0-Smoke
+project_name: HTS-WM-RGB-XLarge-Smoke
 logger: wandb
 wandb_user_name: null
 render: false
@@ -14,7 +14,7 @@ vectorize: Dummy_Atari
 env_name: Atari
 env_id: ALE/Breakout-v5
 env_seed: 1
-obs_type: grayscale
+obs_type: rgb
 img_size:
 - 64
 - 64
@@ -38,11 +38,11 @@ actor:
   min_std: 0.1
   max_std: 1.0
   init_std: 2.0
-  mlp_layers: 2
+  mlp_layers: 5
   layer_norm:
     kw:
       eps: 0.001
-  dense_units: 512
+  dense_units: 1024
   clip_gradients: 100.0
   unimix: 0.01
   action_clip: 1.0
@@ -53,11 +53,11 @@ actor:
       low: 0.05
       high: 0.95
 critic:
-  mlp_layers: 2
+  mlp_layers: 5
   layer_norm:
     kw:
       eps: 0.001
-  dense_units: 512
+  dense_units: 1024
   soft_update_freq: 1
   tau: 0.02
   bins: 255
@@ -73,55 +73,55 @@ world_model:
   clip_gradients: 1000.0
   learnable_initial_recurrent_state: true
   encoder:
-    cnn_channels_multiplier: 32
-    mlp_layers: 2
+    cnn_channels_multiplier: 96
+    mlp_layers: 5
     cnn_layer_norm:
       kw:
         eps: 0.001
     mlp_layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
   recurrent_model:
-    recurrent_state_size: 512
+    recurrent_state_size: 4096
     layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
   transition_model:
-    hidden_size: 512
+    hidden_size: 1024
     layer_norm:
       kw:
         eps: 0.001
   representation_model:
-    hidden_size: 512
+    hidden_size: 1024
     layer_norm:
       kw:
         eps: 0.001
   observation_model:
-    cnn_channels_multiplier: 32
-    mlp_layers: 2
+    cnn_channels_multiplier: 96
+    mlp_layers: 5
     cnn_layer_norm:
       kw:
         eps: 0.001
     mlp_layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
   reward_model:
-    mlp_layers: 2
+    mlp_layers: 5
     layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
     bins: 255
   discount_model:
     learnable: true
-    mlp_layers: 2
+    mlp_layers: 5
     layer_norm:
       kw:
         eps: 0.001
-    dense_units: 512
+    dense_units: 1024
 gamma: 0.996996996996997
 lmbda: 0.95
 horizon: 15
@@ -136,8 +136,8 @@ learning_rate_model: 0.0001
 learning_rate_actor: 8.0e-05
 learning_rate_critic: 8.0e-05
 replay_ratio: 0.125
-running_steps: 10000
-start_training: 1024
+running_steps: 1000
+start_training: 100
 use_grad_clip: false
 clip_type: 1
 grad_clip_norm: 100.0
@@ -147,18 +147,19 @@ use_rewnorm: false
 obsnorm_range: 5
 rewnorm_range: 5
 test_steps: 10000
-eval_interval: 2500
-test_episode: 3
-log_dir: logs/p0_smoke/smoke-dreamerv3-breakout-seed1-10000steps-p0-smoke-10k/
-model_dir: models/p0_smoke/smoke-dreamerv3-breakout-seed1-10000steps-p0-smoke-10k/
-wandb_mode: online
-wandb_run_name: smoke-dreamerv3-breakout-seed1-10000steps-p0-smoke-10k
+eval_interval: 500
+test_episode: 1
+log_dir: logs/rgb_xlarge_smoke/smoke-dreamerv3-Breakout-v5-seed1-1000steps-rgb-xlarge-1k/
+model_dir: models/rgb_xlarge_smoke/smoke-dreamerv3-Breakout-v5-seed1-1000steps-rgb-xlarge-1k/
+model_size: xlarge
+wandb_mode: offline
+wandb_run_name: smoke-dreamerv3-Breakout-v5-seed1-1000steps-rgb-xlarge-1k
 test: 0
 benchmark: 1
-intermediate_test_episode: 3
+intermediate_test_episode: 1
 checkpoint_rule: final
 eval_protocol: final
-render_eval_video: true
+render_eval_video: false
 render_intermediate_video: false
 artifact_root: artifacts
 experiment_id: paper_development

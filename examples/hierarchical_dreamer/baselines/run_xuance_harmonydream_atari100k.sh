@@ -8,6 +8,12 @@ PYTHON_BIN="${PYTHON_BIN:-${REPO_ROOT}/.venv/bin/python}"
 ENV_ID="${ENV_ID:-ALE/Breakout-v5}"
 ROM_NAME="${ENV_ID##*/}"
 DEVICE="${DEVICE:-cuda:0}"
+OBS_TYPE="${OBS_TYPE:-grayscale}"
+NUM_STACK="${NUM_STACK:-1}"
+FRAME_SKIP="${FRAME_SKIP:-4}"
+IMG_SIZE_0="${IMG_SIZE_0:-64}"
+IMG_SIZE_1="${IMG_SIZE_1:-64}"
+MODEL_SIZE="${MODEL_SIZE:-small}"
 WANDB_MODE="${WANDB_MODE:-online}"
 PROJECT_NAME="${PROJECT_NAME:-HTS-WM-Baselines}"
 RUNNING_STEPS="${RUNNING_STEPS:-100000}"
@@ -36,6 +42,11 @@ mkdir -p "${RUN_LOG_DIR}" "${REPO_ROOT}/${LOG_DIR}" "${REPO_ROOT}/${MODEL_DIR}"
   cd "${REPO_ROOT}"
   "${PYTHON_BIN}" examples/dreamer_v3/dreamer_v3_atari.py \
     --env-id "${ENV_ID}" \
+    --obs-type "${OBS_TYPE}" \
+    --num-stack "${NUM_STACK}" \
+    --frame-skip "${FRAME_SKIP}" \
+    --img-size "${IMG_SIZE_0}" "${IMG_SIZE_1}" \
+    --model-size "${MODEL_SIZE}" \
     --device "${DEVICE}" \
     --seed "${SEED}" \
     --harmony True \

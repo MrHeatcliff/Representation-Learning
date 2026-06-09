@@ -2,3 +2,6 @@ experiment_id,suite,task,condition,method,seed,checkpoint_path,global_step,env_s
 paper_development,atari100k,Breakout,default,full,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return_mean,4.666666666666667,raw,675fb3fda1c5f559,d60fabfdc17478e504d80664c994f90e2fe0f02a,807.436
 paper_development,atari100k,Breakout,default,full,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return_std,1.699673171197595,raw,675fb3fda1c5f559,d60fabfdc17478e504d80664c994f90e2fe0f02a,807.436
 paper_development,atari100k,Breakout,default,full,1,final_model.pth,10000,10000,10000,40000,4,1122,3,hns_mean,10.300925925925926,normalized,675fb3fda1c5f559,d60fabfdc17478e504d80664c994f90e2fe0f02a,807.436
+paper_development,atari100k,Breakout,default,full,1,final_model.pth,1000,1000,1000,4000,4,112,1,raw_return_mean,0.0,raw,8e921ee04bd755ad,078024554ba91039320b5e771eda6ba688735cd7,196.581
+paper_development,atari100k,Breakout,default,full,1,final_model.pth,1000,1000,1000,4000,4,112,1,raw_return_std,0.0,raw,8e921ee04bd755ad,078024554ba91039320b5e771eda6ba688735cd7,196.581
+paper_development,atari100k,Breakout,default,full,1,final_model.pth,1000,1000,1000,4000,4,112,1,hns_mean,-5.902777777777778,normalized,8e921ee04bd755ad,078024554ba91039320b5e771eda6ba688735cd7,196.581

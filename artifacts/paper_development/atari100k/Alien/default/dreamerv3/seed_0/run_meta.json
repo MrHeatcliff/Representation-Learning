@@ -1,0 +1,15 @@
+{
+  "experiment_id": "paper_development",
+  "suite": "atari100k",
+  "task": "Alien",
+  "condition": "default",
+  "method": "DreamerV3",
+  "seed": 0,
+  "run_name": "debug-dreamerv3-rgb-alien-20steps",
+  "config_hash": "6d846dedaa7ca40f",
+  "code_commit": "078024554ba91039320b5e771eda6ba688735cd7",
+  "checkpoint_rule": "final",
+  "action_repeat": 4,
+  "start_wall_time": 1780984634.913315,
+  "hns_reference_version": "common_atari100k_random_human_reference_v1"
+}

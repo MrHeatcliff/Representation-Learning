@@ -8,3 +8,6 @@ paper_development,atari100k,Breakout,default,DreamerV3,1,periodic_checkpoint,500
 paper_development,atari100k,Breakout,default,DreamerV3,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return_mean,0.0,raw,5ffd567384bd0518,d60fabfdc17478e504d80664c994f90e2fe0f02a,799.659
 paper_development,atari100k,Breakout,default,DreamerV3,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return_std,0.0,raw,5ffd567384bd0518,d60fabfdc17478e504d80664c994f90e2fe0f02a,799.659
 paper_development,atari100k,Breakout,default,DreamerV3,1,final_model.pth,10000,10000,10000,40000,4,1122,3,hns_mean,-5.902777777777778,normalized,5ffd567384bd0518,d60fabfdc17478e504d80664c994f90e2fe0f02a,799.659
+paper_development,atari100k,Breakout,default,DreamerV3,1,final_model.pth,1000,1000,1000,4000,4,112,1,raw_return_mean,0.0,raw,095925d9420934de,078024554ba91039320b5e771eda6ba688735cd7,194.194
+paper_development,atari100k,Breakout,default,DreamerV3,1,final_model.pth,1000,1000,1000,4000,4,112,1,raw_return_std,0.0,raw,095925d9420934de,078024554ba91039320b5e771eda6ba688735cd7,194.194
+paper_development,atari100k,Breakout,default,DreamerV3,1,final_model.pth,1000,1000,1000,4000,4,112,1,hns_mean,-5.902777777777778,normalized,095925d9420934de,078024554ba91039320b5e771eda6ba688735cd7,194.194

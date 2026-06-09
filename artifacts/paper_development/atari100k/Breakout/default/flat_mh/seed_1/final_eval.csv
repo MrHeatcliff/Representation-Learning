@@ -2,3 +2,4 @@ experiment_id,suite,task,condition,method,seed,checkpoint_path,global_step,env_s
 paper_development,atari100k,Breakout,default,flat_mh,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return,0.0,raw,d77904f591b3ceda,d60fabfdc17478e504d80664c994f90e2fe0f02a,825.394,0
 paper_development,atari100k,Breakout,default,flat_mh,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return,0.0,raw,d77904f591b3ceda,d60fabfdc17478e504d80664c994f90e2fe0f02a,825.394,1
 paper_development,atari100k,Breakout,default,flat_mh,1,final_model.pth,10000,10000,10000,40000,4,1122,3,raw_return,0.0,raw,d77904f591b3ceda,d60fabfdc17478e504d80664c994f90e2fe0f02a,825.394,2
+paper_development,atari100k,Breakout,default,flat_mh,1,final_model.pth,1000,1000,1000,4000,4,112,1,raw_return,0.0,raw,f43251743e8317fb,078024554ba91039320b5e771eda6ba688735cd7,182.831,0
