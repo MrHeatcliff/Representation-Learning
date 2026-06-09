@@ -420,7 +420,7 @@ class DreamerV3Agent(OffPolicyAgent):
         test_player = deepcopy(self.train_player)
         test_player.init_states(num_envs=num_envs)
         videos, episode_videos = [[] for _ in range(num_envs)], []
-        current_episode, scores, best_score = 0, [], -np.inf
+        current_episode, scores, lengths, best_score = 0, [], [], -np.inf
         obs, infos = test_envs.reset()
         if self.config.render_mode == "rgb_array" and self.render:
             images = test_envs.render(self.config.render_mode)
@@ -449,6 +449,7 @@ class DreamerV3Agent(OffPolicyAgent):
                         if is_done[i] != 1:
                             is_done[i] = 1
                             scores.append(infos[i]["episode_score"])
+                            lengths.append(infos[i]["episode_step"])
                         if best_score < infos[i]["episode_score"]:
                             best_score = infos[i]["episode_score"]
                             episode_videos = videos[i].copy()
@@ -469,8 +470,12 @@ class DreamerV3Agent(OffPolicyAgent):
             "eval/episode_return_min": np.min(scores),
             "eval/episode_return_max": np.max(scores),
             "eval/episode_reward_mean": np.mean(scores),
+            "eval/score": np.mean(scores),
+            "eval/length": np.mean(lengths) if lengths else 0.0,
+            "eval/score_std": np.std(scores),
+            "eval/length_std": np.std(lengths) if lengths else 0.0,
         }
-        self.log_infos(test_info, self.current_step)
+        self.log_infos(test_info, self._env_frame_step(self.current_step))
 
         if close_envs:
             test_envs.close()

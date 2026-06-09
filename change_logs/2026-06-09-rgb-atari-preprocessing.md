@@ -45,6 +45,14 @@
   manual action repeat in the wrapper with Gym ALE `frameskip=1`, 2-frame max pooling, Pillow resize, no reset autostart by default,
   `size12m` model preset matching official `deter=2048`, `hidden/units=256`, `stoch=32`, `classes=16`,
   and Alien curve default `REPLAY_RATIO=0.25` to match official `train_ratio=256` with `16 x 64` replay timesteps per update.
+- Added official DreamerV3-style W&B aliases for XuanCe Dreamer runs and log them on raw Atari frame steps:
+  `episode/score`, `episode/length`, `eval/score`, `eval/length`, `train/loss/*`, `train/ent/action`,
+  `replay/replay_ratio`, `replay/update_ratio`, and `train/updates`.
+- Started an official DreamerV3-native HTS implementation under `external_baselines/dreamerv3-official/dreamerv3/`:
+  `hts.py`, `hts_agent.py`, and `main_hts.py`.
+  The first version adds HTS as auxiliary losses on RSSM `repfeat` while preserving the official DreamerV3 policy/value/reward/decoder paths.
+  Added `hts_atari100k` config defaults and paste-ready commands in `OFFICIAL_DREAMERV3_HTS_COMMANDS.md`.
+  Verified Python compile/import and a debug JAX compile smoke with short HTS strides.
 
 ## RGB Sanity Check
 
