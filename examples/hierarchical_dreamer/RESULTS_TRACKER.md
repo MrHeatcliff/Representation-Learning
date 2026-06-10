@@ -18,6 +18,47 @@ development-complete but not paper-final.
 | DreamerV3 | Breakout | 1 | DEV_DONE | NOT PAPER-FINAL | best checkpoint, `3` eval episodes |
 | HTS-WM | Breakout | 1 | DEV_DONE | NOT PAPER-FINAL | best checkpoint, `3` eval episodes |
 | SGF | Breakout | 1 | DONE | PARTIAL EXTERNAL | official-code external, final eval `100` episodes, single seed only |
+| DreamerV3 official size12m | Alien | 0,1,2,3,4 | CURVE_DONE | PARTIAL CURVE ONLY | online train episode scores over 5 seeds; final `100`-episode eval still missing |
+
+## Official DreamerV3 Atari100K Alien 5-Seed Curve
+
+These rows come from the official `danijar/dreamerv3` clone using
+`--configs atari100k size12m`. They are valid for development learning-curve
+figures and curve sanity checks. They are not final Atari table scores because
+they use online training episodes, not a separate final `100`-episode evaluation.
+
+Artifacts:
+
+- Raw per-episode CSV:
+  `artifacts/paper_development/official_dreamerv3/alien_full26_size12m_5seeds/alien_dreamerv3_official_size12m_episode_curves.csv`
+- Seed summary:
+  `artifacts/paper_development/official_dreamerv3/alien_full26_size12m_5seeds/alien_dreamerv3_official_size12m_seed_summary.csv`
+- 10-bin curve CSV:
+  `artifacts/paper_development/official_dreamerv3/alien_full26_size12m_5seeds/alien_dreamerv3_official_size12m_10bin_curve.csv`
+- Raw-score figure:
+  `artifacts/paper_development/official_dreamerv3/alien_full26_size12m_5seeds/alien_dreamerv3_official_size12m_5seed_10bin_curve.png`
+- HNS figure:
+  `artifacts/paper_development/official_dreamerv3/alien_full26_size12m_5seeds/alien_dreamerv3_official_size12m_5seed_10bin_hns_curve.png`
+
+| Method | Condition | Game | Seed | Episodes | Final Agent Actions | Final Frames | Last Episode Score | Last-10 Mean Score | Last-10 Mean HNS | Max Episode Score | Params |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| DreamerV3 | official_size12m | Alien | 0 | 159 | 109457 | 437828 | 1080 | 685 | 6.63 | 2070 | 10498772 |
+| DreamerV3 | official_size12m | Alien | 1 | 181 | 109702 | 438808 | 720 | 711 | 7.00 | 1230 | 10498772 |
+| DreamerV3 | official_size12m | Alien | 2 | 160 | 109285 | 437140 | 880 | 1118 | 12.90 | 2900 | 10498772 |
+| DreamerV3 | official_size12m | Alien | 3 | 171 | 109103 | 436412 | 600 | 614 | 5.60 | 1160 | 10498772 |
+| DreamerV3 | official_size12m | Alien | 4 | 148 | 109805 | 439220 | 2280 | 1348 | 16.24 | 2410 | 10498772 |
+
+Aggregate over seeds `0..4` using the last 10 online training episodes per seed:
+
+| Method | Condition | Game | Seeds | Mean Last-10 Score | Std | SEM | Median | Mean Last-10 HNS | Status |
+|---|---|---|---|---:|---:|---:|---:|---:|---|
+| DreamerV3 | official_size12m | Alien | `0,1,2,3,4` | 895.20 | 320.88 | 143.50 | 711.00 | 9.67 | curve/dev only |
+
+Logging note: these five runs were started before the `paper_artifacts` timer
+filter fix, so their `train_metrics.jsonl` files are very large. The compact
+`episode_scores.*`, `run_meta.json`, and generated aggregate CSV/JSON files are
+the preferred artifacts for this completed batch. Future runs use the patched
+compact train-metric writer.
 
 ## Atari100K Breakout Baselines
 
@@ -136,13 +177,14 @@ Fill this section only after multiple seeds are available.
 | SGF | Breakout | `1` | 41.53 | TBD | 100 | Single seed only; do not report as multi-seed aggregate yet. |
 | DreamerV3 | Breakout | `1` | 15.67 | TBD | 3 | Development only. Row uses best-checkpoint benchmark score, not the final-checkpoint paper protocol. |
 | HTS-WM | Breakout | `1` | 15.33 | TBD | 3 | Development only. Row uses best-checkpoint benchmark score, not the final-checkpoint paper protocol. |
+| DreamerV3 official size12m | Alien | `0,1,2,3,4` | 895.20 | 320.88 | online train episodes | Curve/dev only. Uses last-10 online training episode score per seed, not final `100`-episode eval. |
 
 ## Paper Table Fill Queue
 
 | Paper Table | Current Fill Status | Next Required Run Or Artifact |
 |---|---|---|
 | `tab:backbone-reproduction` | PARTIAL | DreamerV3 paper-final Breakout and selected-suite runs with final checkpoint, `100` eval episodes, paper seed set |
-| `tab:atari-task-results` | PARTIAL | all selected Atari games and methods; current Breakout rows are dev/external only |
+| `tab:atari-task-results` | PARTIAL | Alien DreamerV3 official size12m has 5-seed online train-episode curve; still needs final `100`-episode eval and remaining games/methods |
 | `tab:main-results` | TODO | paper-final aggregates for Memory, Motion, Distractor, DMC, Atari, GPU h |
 | `tab:compute` | PARTIAL | rerun DreamerV3 after param logging; collect HTS-WM params, memory, train h; add FLOPs/update and inference latency |
 | `tab:matched-controls` | PARTIAL | larger flat, flat partition, flat multi-horizon, dense multi-stride, static sparse hierarchy, HTS-WM under matched budget |

@@ -71,7 +71,7 @@ When a run finishes:
 | `tab:hyper-transfer` | P0 | Hyperparameter transfer audit | axis sweeps, dev tasks, frozen defaults, failure modes | PARTIAL | current config defaults; tuning record incomplete |
 | `tab:rollout-fidelity` | P0 | Open-loop prediction error | horizons `1,4,8,16,32`, reward error | TODO | future matched rollout extractor |
 | `tab:dmc-task-results` | P1 | DMC task-level results | per-task scores across methods and seeds | TODO | DMC runs not completed |
-| `tab:atari-task-results` | P1 | Atari task-level results | all 26 games across methods and seeds, HNS aggregates | PARTIAL | Breakout dev/external rows only |
+| `tab:atari-task-results` | P1 | Atari task-level results | all 26 games across methods and seeds, HNS aggregates | PARTIAL | Alien official DreamerV3 size12m has 5-seed online train curve; final `100`-episode eval and other games/methods missing |
 | `tab:planner-audit` | P2 | Optional planning audit | planner FLOPs, latency, return | NOT APPLICABLE YET | no hierarchical planner implemented |
 
 ## Figure Registry
@@ -94,7 +94,7 @@ When a run finishes:
 | `fig:backbone-audit` | P1 | backbone ablation curves | TODO | `figures/backbone_audit.*` |
 | `fig:scaling-transfer` | P1 | scaling and fixed-default transfer curves | TODO | `figures/scaling_transfer.*` |
 | `fig:openloop-rollouts` | P1 | matched open-loop predictions | TODO | `figures/openloop_rollouts.*` |
-| `fig:task-level-curves` | P0/P1 | per-task learning curves by suite | TODO | `figures/task_level_curves.*` |
+| `fig:task-level-curves` | P0/P1 | per-task learning curves by suite | PARTIAL | Alien official DreamerV3 5-seed curve at `artifacts/paper_development/official_dreamerv3/alien_full26_size12m_5seeds/` |
 | `fig:second-backbone` | P1 | second-backbone sanity check | NOT APPLICABLE YET | no second backbone port |
 
 ## Master Experiment IDs From Paper
@@ -121,7 +121,7 @@ When a run finishes:
 | `P1-BASE-03` | P1 | SPARTAN object-centric graph task | NOT STARTED | only if graph claims are made |
 | `P1-DREAM-01` | P1 | Dreamer robustness-technique audit | PARTIAL: some knobs exist | `tab:dreamerv3-robustness-audit`, `fig:backbone-audit` |
 | `P1-SCALE-01` | P1 | data/replay/model/seq/hierarchy scaling | NOT STARTED | `tab:scaling-grid`, `fig:scaling-transfer` |
-| `P1-SUITE-01` | P1 | full DMC Visual and Atari 100K | NOT STARTED except Breakout dev/external rows | `tab:dmc-task-results`, `tab:atari-task-results` |
+| `P1-SUITE-01` | P1 | full DMC Visual and Atari 100K | PARTIAL: Atari Alien official DreamerV3 size12m complete for online train-episode curve over seeds `0..4`; final eval and remaining games/methods missing | `tab:dmc-task-results`, `tab:atari-task-results` |
 | `P1-SUITE-02` | P1 | Crafter/Craftax and DMLab guardrails | NOT STARTED | optional appendix |
 | `P1-ARCH-01` | P1 | second backbone proof of concept | NOT STARTED | `fig:second-backbone` |
 | `P2-PLAN-01` | P2 | hierarchical planner | NOT APPLICABLE YET | `tab:planner-audit` |
@@ -134,6 +134,7 @@ When a run finishes:
 | DreamerV3 Breakout seed 1 `cssk65zq` | No, dev only | used best checkpoint and `test_episode=3`; paper asks final checkpoint and `100` eval episodes for Atari |
 | HTS-WM Breakout seed 1 `i95tp2se` | No, dev only | used best checkpoint and `test_episode=3`; paper asks final checkpoint and `100` eval episodes for Atari |
 | SGF Breakout seed 1 `kcwh4nz5` | Partial official-code external | final eval over `100` episodes, but single seed and native external protocol |
+| DreamerV3 official size12m Alien seeds `0..4` | Partial curve/dev | online train episode curve over 5 seeds; no separate final `100`-episode evaluation yet |
 
 ## Required Launcher Updates Before Paper-Final Same-Code Runs
 

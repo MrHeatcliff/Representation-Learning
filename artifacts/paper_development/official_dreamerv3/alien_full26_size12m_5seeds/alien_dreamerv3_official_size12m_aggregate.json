@@ -1,0 +1,18 @@
+{
+  "method": "DreamerV3",
+  "condition": "official_size12m",
+  "game": "Alien",
+  "seeds": "0,1,2,3,4",
+  "num_seeds": 5,
+  "aggregate_protocol": "online_train_episode_last10_per_seed",
+  "mean_last10_score": 895.2,
+  "std_last10_score": 320.8795724255441,
+  "sem_last10_score": 143.50170730691673,
+  "median_last10_score": 711.0,
+  "mean_last10_hns": 9.672603950781895,
+  "std_last10_hns": 4.650495984369978,
+  "min_last10_score": 614.0,
+  "max_last10_score": 1348.0,
+  "paper_final": false,
+  "reason": "online training episode scores only; no final 100-episode eval artifact yet"
+}
